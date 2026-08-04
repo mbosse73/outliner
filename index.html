@@ -669,9 +669,13 @@ function recordText(id){
    3 — Strukturbefehle
    ========================================================================= */
 
+/* touch VOR dem Anlegen: der Vorzustand des neuen Nodes ist dann null, und
+   applySnap loescht ihn beim Rueckgaengigmachen wieder. Ohne das bliebe er
+   als Waise in nodes liegen — unerreichbar, aber mitgezaehlt und mitgespeichert. */
 function insertAfter(refId, newNode){
   const parent = parentOf(refId) || nodes[zoomId];
   touch(parent.id);
+  touch(newNode.id);
   newNode.parentId = parent.id;
   nodes[newNode.id] = newNode;
   const i = indexIn(parent, refId);
@@ -679,6 +683,7 @@ function insertAfter(refId, newNode){
 }
 function insertFirstChild(parentId, newNode){
   touch(parentId);
+  touch(newNode.id);
   newNode.parentId = parentId;
   nodes[newNode.id] = newNode;
   nodes[parentId].children.unshift(newNode.id);
@@ -1426,6 +1431,7 @@ document.addEventListener("keydown", e => {
       const fresh = makeNode("");
       const p = parentOf(f.id) || nodes[zoomId];
       touch(p.id);
+      touch(fresh.id);          // s. insertAfter: sonst bleibt eine Waise zurueck
       fresh.parentId = p.id;
       nodes[fresh.id] = fresh;
       p.children.splice(indexIn(p, f.id), 0, fresh.id);
