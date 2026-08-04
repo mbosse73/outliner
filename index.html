@@ -219,6 +219,16 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   background:var(--raise);border-radius:4px;padding:0 4px}
 .row.ueberfaellig .frist{color:var(--signal);background:var(--signal-s);font-weight:700}
 
+/* Priorität unterscheidet sich über Kontrast und Gewicht, nicht über eine
+   weitere Farbe — --signal bleibt dem Überfälligen vorbehalten. */
+.prio{font-family:var(--mono);font-size:11px;letter-spacing:.03em;
+  background:var(--raise);border-radius:4px;padding:0 4px;color:var(--ink3)}
+.prio-hoch{color:var(--ink);font-weight:700}
+.prio-mittel{color:var(--ink2);font-weight:600}
+.fortschritt{font-family:var(--mono);font-size:11px;color:var(--ink3);
+  background:var(--raise);border-radius:4px;padding:0 4px}
+.fortschritt-voll{color:var(--gut);background:var(--gut-s);font-weight:700}
+
 /* ---------- Geraet im Dunkelmodus: Oberflaeche bleibt hell ---------- */
 @media (prefers-color-scheme:dark){
   :root{color-scheme:only light}
@@ -230,15 +240,17 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   .pbox,.palette-box{background:var(--sheet)!important}
   .tr:hover,.tr.wahl,.feld .k{background:var(--paper)!important}
   .tag{background:var(--tinte-s)!important}
-  .frist{background:var(--raise)!important}
+  .frist,.prio,.fortschritt{background:var(--raise)!important}
   .row.ueberfaellig .frist{background:var(--signal-s)!important}
+  .fortschritt-voll{background:var(--gut-s)!important}
   .kasten b{background:var(--sheet)!important}
   .row.erledigt .kasten b{background:var(--gut)!important}
   mark{background:#f6e7a8!important}
   .tool:hover,.statusbar kbd{background:var(--raise)!important}
   .menu button:hover{background:var(--paper)!important}
   .blank button{background:var(--tinte-s)!important}
-  .title,.text,.note,.crumb,.subtitle b,.statusbar,.menu button,.tool,.frist{
+  .title,.text,.note,.crumb,.subtitle b,.statusbar,.menu button,.tool,
+  .frist,.prio,.fortschritt{
     -webkit-text-fill-color:currentColor}
   .title,.text{background:transparent!important}
 }
@@ -386,8 +398,15 @@ function seed(){
   nodes[d1].task = leereAufgabe();
   const d2 = add(d, "Ein Datum mit @ macht einen Punkt von selbst zur Aufgabe: @heute.",
     "Auch @morgen, @übermorgen und Wochentage wie @fr gehen. Beim Verlassen der Zeile steht das ausgeschriebene Datum da.");
-  fristSpiegeln(nodes[d2]);
-  add(d, "Strg + K führt zu den Sichten Heute und Offen. Sie sind nichts als gespeicherte Suchen.");
+  merkmaleSpiegeln(nodes[d2]);
+  const d3 = add(d, "Priorität und Fortschritt stehen genauso im Text: !hoch und %50.",
+    "Strg + K setzt die Priorität auch über die Palette — sie schreibt dasselbe Zeichen in die Zeile.");
+  merkmaleSpiegeln(nodes[d3]);
+  // relative Worte in der Saat, damit nichts schon beim ersten Start überfällig ist
+  const d4 = add(d, "Ein Zeitraum braucht zwei Daten: @heute..fr.",
+    "Ausgeschrieben steht dort dann etwa @2026-03-02..2026-03-06. In der Notiz gilt das nicht — sie ist Prosa.");
+  merkmaleSpiegeln(nodes[d4]);
+  add(d, "Strg + K führt zu den Sichten Heute, Offen und Wichtig. Sie sind nichts als gespeicherte Suchen.");
 
   const c = add(ROOT, "Womit fängst du an?");
   add(c, "");
@@ -468,6 +487,10 @@ function recordText(id){
   if (lastTextTx && lastTextTx.id === id && now - lastTextTx.time < 900){
     lastTextTx.entry.after[id] = clone(nodes[id]);
     lastTextTx.time = now;
+    // Die offene Transaktion ist in der gebuendelten aufgegangen. Bliebe sie
+    // stehen, waere das naechste begin() wirkungslos und die folgende
+    // Aenderung landete mit falschem Vorzustand in dieser hier.
+    tx = null;
     scheduleSave();
     return;
   }
@@ -596,10 +619,20 @@ function alleTags(){
   }
   return Array.from(zaehler.entries()).sort((a, b) => b[1] - a[1]);
 }
-/* --- Fälligkeit. Wie ein Tag: das Datum steht im Text und wird von dort
-       nach task.due gespiegelt. Kein Kürzel, kein Formularfeld. --- */
-const FRIST_RE = /@(\d{4}-\d{2}-\d{2}|heute|morgen|übermorgen|uebermorgen|mo|di|mi|do|fr|sa|so)\b/gi;
+/* --- Merkmale einer Aufgabe stehen im Text und werden von dort ins Modell
+       gespiegelt, genau wie die Tags. Der Text ist die einzige Wahrheit;
+       auch die Palettenbefehle schreiben nur hier hinein.
+
+         @2026-03-09          Frist
+         @2026-03-01..03-09   Zeitraum: Start und Frist
+         !hoch !mittel !niedrig   Priorität
+         %50                  Fortschritt                                --- */
+const DATUM = "\\d{4}-\\d{2}-\\d{2}|heute|morgen|übermorgen|uebermorgen|mo|di|mi|do|fr|sa|so";
+const FRIST_RE = new RegExp("@(" + DATUM + ")(?:\\.\\.(" + DATUM + "))?\\b", "gi");
+const PRIO_RE = /!(hoch|mittel|niedrig)\b/gi;
+const PROZENT_RE = /%(100|\d{1,2})\b/g;
 const WOCHENTAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
+const PRIOS = ["hoch", "mittel", "niedrig"];
 
 function alsISO(d){
   const p = x => String(x).padStart(2, "0");
@@ -621,10 +654,25 @@ function loeseDatum(wort){
   }
   return null;
 }
-function fristAus(text){
+/* Ein Zeitraum @von..bis setzt Start und Frist, ein einzelnes Datum nur die
+   Frist — der häufigere Fall bleibt damit der kürzere. */
+function fristenAus(text){
   FRIST_RE.lastIndex = 0;
   const m = FRIST_RE.exec(text || "");
-  return m ? loeseDatum(m[1]) : null;
+  if (!m) return { start: null, due: null };
+  const a = loeseDatum(m[1]);
+  const b = m[2] ? loeseDatum(m[2]) : null;
+  return b ? { start: a, due: b } : { start: null, due: a };
+}
+function prioAus(text){
+  PRIO_RE.lastIndex = 0;
+  const m = PRIO_RE.exec(text || "");
+  return m ? m[1].toLowerCase() : null;
+}
+function prozentAus(text){
+  PROZENT_RE.lastIndex = 0;
+  const m = PROZENT_RE.exec(text || "");
+  return m ? Number(m[1]) : null;
 }
 
 // Einmal festgelegt, von Rendern und Filter gemeinsam gelesen
@@ -633,11 +681,13 @@ function istErledigt(n){ return istAufgabe(n) && n.task.status === "erledigt"; }
 function istOffen(n){ return istAufgabe(n) && !istErledigt(n); }
 function istUeberfaellig(n){ return istOffen(n) && !!n.task.due && n.task.due < heuteISO(); }
 function istFaellig(n){ return istOffen(n) && !!n.task.due && n.task.due <= heuteISO(); }
+function istWichtig(n){ return istOffen(n) && n.task.prio === "hoch"; }
 
 function parseQuery(q){
   const terms = [], tags = [];
   let favOnly = false, aufgabeOnly = false, offenOnly = false,
-      erledigtOnly = false, faelligOnly = false, ueberfaelligOnly = false;
+      erledigtOnly = false, faelligOnly = false, ueberfaelligOnly = false,
+      wichtigOnly = false, prioOnly = null;
   q.trim().split(/\s+/).filter(Boolean).forEach(t => {
     const m = t.toLowerCase();
     if (m === "!fav" || m === "!angeheftet") favOnly = true;
@@ -646,10 +696,13 @@ function parseQuery(q){
     else if (m === "!erledigt") erledigtOnly = true;
     else if (m === "!heute") faelligOnly = true;
     else if (m === "!überfällig" || m === "!ueberfaellig") ueberfaelligOnly = true;
+    else if (m === "!wichtig") wichtigOnly = true;
+    else if (PRIOS.indexOf(m.slice(1)) >= 0 && m[0] === "!") prioOnly = m.slice(1);
     else if (t.length > 1 && t[0] === "#") tags.push(t.slice(1).toLowerCase());
     else terms.push(t.toLowerCase());
   });
-  return { terms, tags, favOnly, aufgabeOnly, offenOnly, erledigtOnly, faelligOnly, ueberfaelligOnly };
+  return { terms, tags, favOnly, aufgabeOnly, offenOnly, erledigtOnly,
+           faelligOnly, ueberfaelligOnly, wichtigOnly, prioOnly };
 }
 function trifft(n, q){
   if (q.favOnly && !n.fav) return false;
@@ -658,6 +711,8 @@ function trifft(n, q){
   if (q.erledigtOnly && !istErledigt(n)) return false;
   if (q.faelligOnly && !istFaellig(n)) return false;
   if (q.ueberfaelligOnly && !istUeberfaellig(n)) return false;
+  if (q.wichtigOnly && !istWichtig(n)) return false;
+  if (q.prioOnly && !(istAufgabe(n) && n.task.prio === q.prioOnly)) return false;
   const heu = (n.text + " " + (n.note || "")).toLowerCase();
   if (!q.terms.every(t => heu.includes(t))) return false;
   if (q.tags.length){
@@ -822,10 +877,10 @@ function updateRow(el, meta, litPath){
 function escHtml(s){
   return s.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
 }
-/* mitFrist nur fuer die Textzeile: task.due wird allein aus n.text gelesen.
-   Eine Notiz ist Prosa — ein Datum darin soll keine Frist setzen und darum
-   auch nicht so aussehen. */
-function male(el, value, mitFrist){
+/* mitMerkmalen nur fuer die Textzeile: Frist, Prioritaet und Fortschritt
+   werden allein aus n.text gelesen. Eine Notiz ist Prosa — ein Datum darin
+   soll keine Frist setzen und darum auch nicht so aussehen. */
+function male(el, value, mitMerkmalen){
   if (document.activeElement === el){
     if (el.textContent !== value) el.textContent = value;
     el.dataset.stand = "";
@@ -833,32 +888,37 @@ function male(el, value, mitFrist){
   }
   const stand = value + "\u0000" + query;
   if (el.dataset.stand === stand) return;
-  el.innerHTML = schmuecke(value, mitFrist);
+  el.innerHTML = schmuecke(value, mitMerkmalen);
   el.dataset.stand = stand;
 }
-function schmuecke(text, mitFrist){
+function schmuecke(text, mitMerkmalen){
   const terms = filter ? filter.q.terms.filter(Boolean) : [];
 
-  // Tags und Fristen in einem Durchgang, nach Stelle sortiert
+  // Tags und Merkmale in einem Durchgang, nach Stelle sortiert
   const funde = [];
-  const sammle = (re, art) => {
+  const sammle = (re, klasseVon) => {
     re.lastIndex = 0;
     let m;
-    while ((m = re.exec(text))) funde.push({ von: m.index, bis: m.index + m[0].length, art });
+    while ((m = re.exec(text)))
+      funde.push({ von: m.index, bis: m.index + m[0].length, klasse: klasseVon(m) });
   };
-  sammle(TAG_RE, "tag");
-  if (mitFrist) sammle(FRIST_RE, "frist");
+  sammle(TAG_RE, () => "tag");
+  if (mitMerkmalen){
+    sammle(FRIST_RE, () => "frist");
+    sammle(PRIO_RE, m => "prio prio-" + m[1].toLowerCase());
+    sammle(PROZENT_RE, m => "fortschritt" + (m[1] === "100" ? " fortschritt-voll" : ""));
+  }
   funde.sort((a, b) => a.von - b.von);
 
   const teile = [];
   let last = 0;
   for (const f of funde){
     if (f.von < last) continue;                      // Überlappung verwerfen
-    teile.push({ t: text.slice(last, f.von), art: null });
-    teile.push({ t: text.slice(f.von, f.bis), art: f.art });
+    teile.push({ t: text.slice(last, f.von), klasse: null });
+    teile.push({ t: text.slice(f.von, f.bis), klasse: f.klasse });
     last = f.bis;
   }
-  teile.push({ t: text.slice(last), art: null });
+  teile.push({ t: text.slice(last), klasse: null });
 
   return teile.map(p => {
     let s = escHtml(p.t);
@@ -867,7 +927,7 @@ function schmuecke(text, mitFrist){
       s = s.replace(re, "\u0001$1\u0002");
     }
     s = s.replace(/\u0001/g, "<mark>").replace(/\u0002/g, "</mark>");
-    return p.art ? '<span class="' + p.art + '">' + s + "</span>" : s;
+    return p.klasse ? '<span class="' + p.klasse + '">' + s + "</span>" : s;
   }).join("");
 }
 
@@ -1197,8 +1257,8 @@ document.addEventListener("keydown", e => {
     touch(f.id);
     nodes[f.id].text = before;
     const fresh = makeNode(after);
-    fristSpiegeln(nodes[f.id]);       // die Frist folgt dem Text, auch beim Teilen
-    fristSpiegeln(fresh);
+    merkmaleSpiegeln(nodes[f.id]);       // die Frist folgt dem Text, auch beim Teilen
+    merkmaleSpiegeln(fresh);
     if (n.children.length && !n.collapsed) insertFirstChild(f.id, fresh);
     else insertAfter(f.id, fresh);
     commit();
@@ -1231,7 +1291,7 @@ document.addEventListener("keydown", e => {
     const joinAt = prev.text.length;
     touch(prevMeta.id);
     prev.text = prev.text + nodes[f.id].text;
-    fristSpiegeln(prev);              // dito beim Verbinden
+    merkmaleSpiegeln(prev);              // dito beim Verbinden
     if (nodes[f.id].note && !prev.note) prev.note = nodes[f.id].note;
     detach(f.id);
     removeSubtree(f.id);
@@ -1290,15 +1350,17 @@ function newFirstChild(){
 /* Das Datum steht im Text, task.due wird daraus abgeleitet. Verschwindet es,
    bleibt die Aufgabe bestehen und verliert nur ihre Frist — ein gesetzter
    Status soll nicht still verschwinden. */
-function fristSpiegeln(n){
+function merkmaleSpiegeln(n){
   if (!n) return;
-  const d = fristAus(n.text);
-  if (d){
-    if (!n.task) n.task = leereAufgabe();
-    n.task.due = d;
-  } else if (n.task && n.task.due){
-    n.task.due = null;
-  }
+  const f = fristenAus(n.text);
+  const prio = prioAus(n.text);
+  const progress = prozentAus(n.text);
+  if ((f.due || f.start || prio || progress !== null) && !n.task) n.task = leereAufgabe();
+  if (!n.task) return;
+  n.task.start = f.start;
+  n.task.due = f.due;
+  n.task.prio = prio;
+  n.task.progress = progress;
 }
 
 /* @morgen wird beim Verlassen der Zeile zum ausgeschriebenen Datum, sonst
@@ -1306,15 +1368,18 @@ function fristSpiegeln(n){
    Erst hier, nicht beim Tippen — im offenen Feld darf nichts umgeschrieben werden. */
 function fristAusschreiben(n){
   if (!n || !n.text) return false;
-  const neu = n.text.replace(FRIST_RE, (ganz, wort) => {
-    const d = loeseDatum(wort);
-    return d ? "@" + d : ganz;
+  const neu = n.text.replace(FRIST_RE, (ganz, von, bis) => {
+    const a = loeseDatum(von);
+    if (!a) return ganz;
+    if (!bis) return "@" + a;
+    const b = loeseDatum(bis);
+    return b ? "@" + a + ".." + b : ganz;
   });
   if (neu === n.text) return false;
   begin("Frist");
   touch(n.id);
   n.text = neu;
-  fristSpiegeln(n);
+  merkmaleSpiegeln(n);
   n.modified = Date.now();
   commit();
   lastTextTx = null;
@@ -1326,7 +1391,7 @@ function commitField(f){
   const n = nodes[f.id];
   if (!n) return;
   const val = f.el.textContent;
-  if (f.field === "text" && n.text !== val){ begin("Text"); touch(f.id); n.text = val; fristSpiegeln(n); n.modified = Date.now(); recordText(f.id); }
+  if (f.field === "text" && n.text !== val){ begin("Text"); touch(f.id); n.text = val; merkmaleSpiegeln(n); n.modified = Date.now(); recordText(f.id); }
   if (f.field === "note" && n.note !== val){ begin("Notiz"); touch(f.id); n.note = val; n.modified = Date.now(); recordText(f.id); }
 }
 
@@ -1341,7 +1406,7 @@ rowsEl.addEventListener("input", e => {
   begin(el.dataset.field === "note" ? "Notiz" : "Text");
   touch(id);
   if (el.dataset.field === "note") n.note = el.textContent;
-  else { n.text = el.textContent; fristSpiegeln(n); }
+  else { n.text = el.textContent; merkmaleSpiegeln(n); }
   n.modified = Date.now();
   recordText(id);
   focusState = { id, field: el.dataset.field, pos: getCaret(el) };
@@ -1362,9 +1427,12 @@ rowsEl.addEventListener("focusout", e => {
     if (row) commitField({ id: row.dataset.id, field: el.dataset.field, el, pos: 0 });
     const n = row && nodes[row.dataset.id];
     if (n && el.dataset.field === "note" && n.note === ""){
-      begin("Notiz entfernen"); touch(row.dataset.id); n.note = null; commit(); render(false);
+      begin("Notiz entfernen"); touch(row.dataset.id); n.note = null; commit();
     }
-    if (n && el.dataset.field === "text" && fristAusschreiben(n)) render(false);
+    if (n && el.dataset.field === "text") fristAusschreiben(n);
+    // Erst beim Verlassen werden Tags und Merkmale ausgezeichnet — und zwar
+    // nach dem Fokuswechsel: waehrend blur darf das DOM nicht umgebaut werden.
+    setTimeout(() => render(false), 0);
   }
 });
 document.addEventListener("selectionchange", () => {
@@ -1649,6 +1717,26 @@ function erledigtUmschalten(id){
   render(false);   // die Zeile selbst ist die Rueckmeldung, kein toast
 }
 
+/* Der Palettenbefehl schreibt das Zeichen in den Text, statt task.prio
+   daran vorbei zu setzen. So bleibt der Text die einzige Wahrheit und
+   beide Wege — tippen oder Palette — führen zum selben Ergebnis. */
+function prioSetzen(id, stufe){
+  const n = nodes[id];
+  if (!n) return;
+  begin(stufe ? "Priorität " + stufe : "Priorität entfernen");
+  touch(id);
+  let t = n.text.replace(PRIO_RE, "").replace(/\s{2,}/g, " ").trim();
+  if (stufe) t = t ? t + " !" + stufe : "!" + stufe;
+  n.text = t;
+  merkmaleSpiegeln(n);
+  n.modified = Date.now();
+  commit();
+  lastTextTx = null;
+  focusState = { id, field: "text", pos: Infinity };
+  render(true);
+  toast(stufe ? "Priorität " + stufe : "Priorität entfernt");
+}
+
 function pfadVon(id){
   const p = [];
   let cur = nodes[id] ? nodes[id].parentId : null;
@@ -1680,8 +1768,17 @@ const BEFEHLE = [
     run: () => focusState.id ? aufgabeUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
   { a: "Aufgabe", t: "Erledigt umschalten", m: "Abhaken oder wieder öffnen",
     run: () => focusState.id ? erledigtUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
+  { a: "Aufgabe", t: "Priorität hoch", m: "Schreibt !hoch in die Zeile",
+    run: () => focusState.id ? prioSetzen(focusState.id, "hoch") : toast("Erst einen Punkt anwählen") },
+  { a: "Aufgabe", t: "Priorität mittel", m: "Schreibt !mittel in die Zeile",
+    run: () => focusState.id ? prioSetzen(focusState.id, "mittel") : toast("Erst einen Punkt anwählen") },
+  { a: "Aufgabe", t: "Priorität niedrig", m: "Schreibt !niedrig in die Zeile",
+    run: () => focusState.id ? prioSetzen(focusState.id, "niedrig") : toast("Erst einen Punkt anwählen") },
+  { a: "Aufgabe", t: "Priorität entfernen", m: "Nimmt das Zeichen wieder heraus",
+    run: () => focusState.id ? prioSetzen(focusState.id, null) : toast("Erst einen Punkt anwählen") },
   { a: "Sicht", t: "Heute", m: "Offenes, das fällig oder überfällig ist", run: () => setzeSuche("!heute") },
   { a: "Sicht", t: "Offen", m: "Alle offenen Aufgaben", run: () => setzeSuche("!offen") },
+  { a: "Sicht", t: "Wichtig", m: "Offenes mit hoher Priorität", run: () => setzeSuche("!wichtig") },
   { a: "Ansicht", t: "Ein- und ausklappen", m: "Alle Zweige umschalten", run: faltenUmschalten },
   { a: "Ansicht", t: "Fokus verlassen", m: "Eine Ebene hinaus", run: zoomOut },
   { a: "Ansicht", t: "Suche zurücksetzen", m: "Ganze Gliederung zeigen", run: () => setzeSuche("") },
@@ -1794,12 +1891,16 @@ function palMarkieren(){
 }
 
 palEingabe.addEventListener("input", palBauen);
+/* stopPropagation ist wesentlich: palSchliessen() setzt palOffen auf false,
+   danach greift der Waechter im document-Lauscher nicht mehr und derselbe
+   Tastendruck wuerde ein zweites Mal auf die Gliederung wirken. */
 palEingabe.addEventListener("keydown", e => {
-  if (e.key === "Escape"){ e.preventDefault(); palSchliessen(); return; }
+  if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); palSchliessen(); return; }
   if (e.key === "ArrowDown"){ e.preventDefault(); palWahl = Math.min(palWahl + 1, palPosten.length - 1); palMarkieren(); return; }
   if (e.key === "ArrowUp"){ e.preventDefault(); palWahl = Math.max(palWahl - 1, 0); palMarkieren(); return; }
   if (e.key === "Enter"){
     e.preventDefault();
+    e.stopPropagation();
     const p = palPosten[palWahl];
     if (p) p.run();
     return;

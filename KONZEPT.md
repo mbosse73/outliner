@@ -40,12 +40,14 @@ Baum mit unbegrenzter Verschachtelung, Tastaturbedienung, Ein- und Ausklappen, F
 ### Stufe 2 — Organisation *(fertig)*
 Globale Suche als gefilterte Gliederung, Tags per `#`, Anheften, Befehlspalette mit Sprungzielen, zuletzt Bearbeitetem und Befehlen.
 
-### Stufe 3 — Aufgaben *(teilweise)*
+### Stufe 3 — Aufgaben *(fertig)*
 Status, Priorität, Start- und Fälligkeitsdatum, Fortschritt als optionale Eigenschaften eines Punktes, per Tastatur inline gesetzt. Sichten „Heute", „Offen", „Wichtig". Überfälliges in Signalrot.
 
-Fertig sind Status und Fälligkeit: abgehakt wird per Klick aufs Kästchen oder über die Befehlspalette, das Datum wird als `@2026-03-09`, `@heute` oder `@fr` in den Text getippt und von dort nach `task.due` gespiegelt — dieselbe Bauart wie die Tags. „Heute" und „Offen" sind gespeicherte Suchen (`!heute`, `!offen`), keine eigene Ansicht.
+Abgehakt wird per Klick aufs Kästchen oder über die Befehlspalette. Alles Übrige steht als Zeichen im Text und wird von dort ins Modell gespiegelt — dieselbe Bauart wie die Tags: `@2026-03-09` die Frist, `@von..bis` der Zeitraum, `!hoch` die Priorität, `%50` der Fortschritt. Auch der Palettenbefehl für die Priorität schreibt nur dieses Zeichen in die Zeile; damit bleibt der Text die einzige Wahrheit und es gibt keinen zweiten Ort, der abgeglichen werden müsste.
 
-Offen: Priorität, Startdatum, Fortschritt und die daran hängende Sicht „Wichtig".
+Die Sichten sind gespeicherte Suchen (`!heute`, `!offen`, `!wichtig`), keine eigene Ansicht — dieselbe Entscheidung wie oben, nur eine Ebene tiefer.
+
+In der Notizzeile gelten die Zeichen nicht: sie ist Prosa.
 
 ### Stufe 4 — Weitere Ansichten
 Kanban mit frei definierbaren Spalten, Kalender in Tag/Woche/Monat, Gantt mit Zeiträumen und Meilensteinen, Mindmap. Alles als SVG und CSS, ohne Bibliothek.

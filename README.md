@@ -38,8 +38,9 @@ Die Suche filtert die Gliederung selbst, statt eine Trefferliste zu zeigen: Tref
 - `!fav` zeigt nur Angeheftetes
 - `!aufgabe`, `!offen`, `!erledigt` grenzen auf Aufgaben ein
 - `!heute` zeigt, was fällig oder überfällig ist, `!überfällig` nur Letzteres
+- `!wichtig` zeigt Offenes mit hoher Priorität, `!hoch` `!mittel` `!niedrig` filtern nach Stufe
 
-Die Sichten „Heute" und „Offen" in der Befehlspalette sind nichts anderes als diese Suchen — es gibt keine zweite Ansicht, nur einen anderen Filter auf dieselbe Gliederung.
+Die Sichten „Heute", „Offen" und „Wichtig" in der Befehlspalette sind nichts anderes als diese Suchen — es gibt keine zweite Ansicht, nur einen anderen Filter auf dieselbe Gliederung.
 
 Beim Umbauen der Struktur (Enter, Tab, Verschieben) wird der Filter aufgehoben, damit keine unsichtbaren Punkte entstehen.
 
@@ -47,15 +48,22 @@ Beim Umbauen der Struktur (Enter, Tab, Verschieben) wird der Filter aufgehoben, 
 
 Jeder Punkt kann eine Aufgabe sein. Ein Klick aufs Kästchen hakt sie ab; über die Befehlspalette (`Strg`+`K`) lässt sich ein Punkt zur Aufgabe machen und wieder zurücknehmen. Ein neues Tastenkürzel gibt es dafür nicht.
 
-Die Fälligkeit wird getippt, nicht ausgewählt — ein `@` im Text, genau wie ein `#` einen Tag setzt:
+Alles Weitere wird getippt, nicht ausgewählt — Zeichen im Text, genau wie ein `#` einen Tag setzt:
 
 | Geschrieben | Bedeutung |
 |---|---|
-| `@2026-03-09` | dieses Datum |
+| `@2026-03-09` | Fälligkeit |
 | `@heute` `@morgen` `@übermorgen` | von heute aus gerechnet |
 | `@mo` … `@so` | der nächste solche Wochentag |
+| `@2026-03-02..2026-03-06` | Zeitraum: Start und Fälligkeit |
+| `!hoch` `!mittel` `!niedrig` | Priorität |
+| `%50` | Fortschritt |
 
-Beim Verlassen der Zeile wird aus `@morgen` das ausgeschriebene Datum, damit Text und gespeicherte Frist nicht ab dem nächsten Tag auseinanderlaufen. Ein Punkt mit Datum wird dadurch von selbst zur Aufgabe. Überfälliges steht in Signalrot.
+Beim Verlassen der Zeile wird aus `@morgen` das ausgeschriebene Datum, damit Text und gespeicherte Frist nicht ab dem nächsten Tag auseinanderlaufen. Ein Punkt mit einem dieser Zeichen wird dadurch von selbst zur Aufgabe. Überfälliges steht in Signalrot.
+
+Die Priorität lässt sich auch über die Palette setzen — der Befehl schreibt dasselbe Zeichen in die Zeile. Der Text bleibt so die einzige Wahrheit, und beide Wege führen zum selben Ergebnis.
+
+In der Notizzeile gilt nichts davon: sie ist Prosa, ein Datum darin setzt keine Frist.
 
 ## Daten
 
@@ -70,7 +78,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 und 2 sowie von Stufe 3 der Status und die Fälligkeit. Priorität, Startdatum, Fortschritt und die Sicht „Wichtig" stehen noch aus. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3. Als Nächstes kommen die weiteren Ansichten aus Stufe 4 — Kanban, Kalender, Gantt, Mindmap. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
