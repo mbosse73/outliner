@@ -80,6 +80,14 @@ Eine Abweichung ist Absicht: **Zuklappen wirkt nicht auf den Kalender.** Fokus u
 
 Auf schmalen Fenstern weicht die Leiste, damit sie den Pfad nicht zerdrückt; die Palette führt weiterhin zu jeder Ansicht.
 
+## Verweise
+
+`[[Umzug]]` im Text verweist auf den Punkt, der so heißt. Ein Klick springt hin. Getroffen wird der Punkt über seinen **blanken** Text — angehängte Zeichen zählen nicht mit, `[[Umzug]]` findet also auch „Umzug #wohnen @2026-09-01 !hoch".
+
+Springt man in einen Punkt hinein, steht unter seinem Titel, wer auf ihn verweist. In der Gliederung selbst kostet das keinen Platz.
+
+**Ein Verweis zeigt auf einen Text, nicht auf eine feste Kennung.** Benennt man das Ziel um, geht er ins Leere. Damit das nicht unbemerkt geschieht, wird ein loser Verweis gestrichelt und blass gezeichnet statt einfach wirkungslos zu sein.
+
 ## Daten
 
 Gespeichert wird laufend im `localStorage` des Browsers.
@@ -93,7 +101,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt, Kalender und Mindmap. Es fehlt Kanban. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3, von Stufe 4 die Ansichten Gantt, Kalender und Mindmap, und von Stufe 5 die Verweise samt Rückverweisen. Kanban ist zurückgestellt; verwandte Themen und Spiegelungen stehen aus. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 

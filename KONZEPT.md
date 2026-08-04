@@ -60,10 +60,17 @@ Der **Kalender** zeigt Monat, Woche und Tag. Ein Zeitraum läuft als Balken übe
 
 Eine bewusste Abweichung: **Zuklappen wirkt nicht auf den Kalender.** Fokus und Suche sind absichtliche Einschränkungen, ein zugeklappter Zweig ist nur eine Lesehilfe der Gliederung — er darf keine Termine still entfernen. Technisch über `visibleRows(true)`; dieselbe Funktion ignoriert Zuklappen ohnehin schon, sobald gefiltert wird.
 
-Offen: **Kanban** — erst, wenn `task.status` mehr als `offen` und `erledigt` kennt und es einen Ort für die Spaltendefinition gibt.
+**Kanban ist zurückgestellt** — ob es überhaupt kommt, ist offen. Es bräuchte zwei Eingriffe ins Modell: mehr Werte in `task.status` als `offen` und `erledigt`, und einen Ort für die Spaltendefinition, den `save()` heute nicht hat. Es gilt nicht als Zusage.
 
-### Stufe 5 — Wissensnetz
+### Stufe 5 — Wissensnetz *(teilweise)*
 Interne Verweise `[[…]]`, Rückverweise, verwandte Themen. Spiegelungen: ein Punkt erscheint an mehreren Stellen, ohne kopiert zu werden.
+
+Fertig sind **Verweise und Rückverweise**. Ein Verweis zielt über den blanken Text des Punktes — also ohne Tags, Fristen, Priorität und Fortschritt —, damit er von Hand schreibbar bleibt. Der Preis ist, dass er beim Umbenennen des Ziels ins Leere geht; deshalb wird ein loser Verweis sichtbar gezeichnet statt still wirkungslos zu sein. Nichts davon wird gespeichert: beide Verzeichnisse entstehen je Rendern aus den Texten, wie schon die Tags.
+
+Offen:
+
+- **Verwandte Themen** — hier fehlt zuerst eine Festlegung, was „verwandt" heißen soll: gemeinsame Tags, gemeinsame Verweisziele oder Textähnlichkeit. Ohne diese Entscheidung ist nichts zu bauen.
+- **Spiegelungen** — der große Eingriff. Sie brechen die Annahme, dass ein Punkt genau ein `parentId` hat: die Identität einer Zeile wäre dann nicht mehr die `id`, sondern `id` plus Pfad. Daran hängen `rowIndex`, `rowEls`, `rowMeta`, `rowPos` und `focusState`. Gehört in einen eigenen Schritt, nicht nebenbei.
 
 ### Stufe 6 — Dokumente
 Einzelne Bereiche als eigenständige Dokumente behandeln, Import und Export, Archivierung.

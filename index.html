@@ -277,6 +277,25 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
 .graute.ueberfaellig{background:var(--signal)}
 .gleer{padding:26px 4px;font-size:13px;color:var(--ink3);line-height:1.6;max-width:52ch}
 
+/* ---------- Stufe 5: Verweise ---------- */
+/* Nicht wie ein Tag gefuellt, sondern unterstrichen — sonst waeren beide
+   Zeichen auf einen Blick nicht zu unterscheiden. */
+.verweis{color:var(--tinte);border-bottom:1px solid var(--tinte);cursor:pointer}
+.verweis:hover{background:var(--tinte-s)}
+/* Ein Verweis ins Leere bricht sichtbar, nicht still. Nicht --signal: das
+   gehoert dem Ueberfaelligen, und ein loser Verweis ist nicht dringend. */
+.verweis.leer{color:var(--ink3);border-bottom:1px dashed var(--rule2)}
+.verweis.leer:hover{background:var(--raise)}
+
+.rueck{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 0 14px}
+.rueck[hidden]{display:none}   /* display:flex wuerde das hidden-Attribut sonst ueberstimmen */
+.rueck b{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;font-weight:700;color:var(--ink3)}
+.rverweis{font-size:12.5px;color:var(--ink2);background:var(--sheet);
+  border:1px solid var(--rule);border-radius:8px;padding:3px 10px;
+  max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rverweis:hover{border-color:var(--tinte);color:var(--tinte)}
+
 /* Kalender */
 .kalender{padding:4px 0 30px}
 .kkopf{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:2px 0 12px}
@@ -393,6 +412,10 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   .kein{background:var(--raise)!important}
   .kein:hover{background:var(--sheet)!important}
   .kein.ueberfaellig{background:var(--signal-s)!important}
+  .verweis:hover{background:var(--tinte-s)!important}
+  .verweis.leer:hover{background:var(--raise)!important}
+  .rverweis{background:var(--sheet)!important}
+  .verweis,.rueck b,.rverweis{-webkit-text-fill-color:currentColor}
   .row.ueberfaellig .frist{background:var(--signal-s)!important}
   .fortschritt-voll{background:var(--gut-s)!important}
   .kasten b{background:var(--sheet)!important}
@@ -445,6 +468,7 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   <div class="doc">
     <h1 class="title" id="title" contenteditable="plaintext-only" spellcheck="false"></h1>
     <div class="subtitle"><b id="subtitle"></b><i></i></div>
+    <div class="rueck" id="rueck" hidden></div>
     <div id="rows"></div>
     <div class="blank" id="blank" hidden>Noch nichts hier. <button id="blank-add">Ersten Punkt schreiben</button></div>
     <div class="gantt" id="gantt" hidden></div>
@@ -797,6 +821,11 @@ const DATUM = "\\d{4}-\\d{2}-\\d{2}|heute|morgen|übermorgen|uebermorgen|mo|di|m
 const FRIST_RE = new RegExp("@(" + DATUM + ")(?:\\.\\.(" + DATUM + "))?\\b", "gi");
 const PRIO_RE = /!(hoch|mittel|niedrig)\b/gi;
 const PROZENT_RE = /%(100|\d{1,2})\b/g;
+/* Interner Verweis (Stufe 5). Gezielt wird ueber den Text des Punktes, nicht
+   ueber seine Kennung: der Rohtext bleibt so von Hand schreibbar. Der Preis
+   ist, dass ein Verweis beim Umbenennen des Ziels ins Leere geht — er wird
+   deshalb sichtbar als leer gezeichnet, statt still zu brechen. */
+const VERWEIS_RE = /\[\[([^\[\]\n]{1,80}?)\]\]/g;
 const WOCHENTAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
 const PRIOS = ["hoch", "mittel", "niedrig"];
 
@@ -848,6 +877,48 @@ function istOffen(n){ return istAufgabe(n) && !istErledigt(n); }
 function istUeberfaellig(n){ return istOffen(n) && !!n.task.due && n.task.due < heuteISO(); }
 function istFaellig(n){ return istOffen(n) && !!n.task.due && n.task.due <= heuteISO(); }
 function istWichtig(n){ return istOffen(n) && n.task.prio === "hoch"; }
+
+/* --- Verweisnetz. Wie die Tags aus dem Text gelesen und nirgends
+       gespeichert; beide Verzeichnisse entstehen einmal je Rendern. --- */
+let verweisZiele = new Map();    // gesaeuberter Text (klein) -> id
+let rueckverweise = new Map();   // Ziel-id -> Menge der verweisenden ids
+
+/* Der Text ohne alle angehaengten Zeichen — danach wird ein Verweis
+   aufgeloest, damit [[Umzug]] auch den Punkt "Umzug #wohnen @2026-09-01
+   !hoch" trifft. Ein Tag ist dabei so wenig Teil des Namens wie eine Frist. */
+function blankerText(n){
+  return n.text.replace(FRIST_RE, "").replace(PROZENT_RE, "").replace(PRIO_RE, "")
+               .replace(TAG_RE, "").replace(VERWEIS_RE, "$1")
+               .replace(/\s{2,}/g, " ").trim();
+}
+function verweiseAus(n){
+  const out = [];
+  const lies = s => { if (!s) return; VERWEIS_RE.lastIndex = 0; let m;
+    while ((m = VERWEIS_RE.exec(s))) out.push(m[1].trim()); };
+  lies(n.text); lies(n.note);
+  return out;
+}
+function baueVerweisnetz(){
+  verweisZiele = new Map();
+  rueckverweise = new Map();
+  for (const id in nodes){
+    if (id === ROOT) continue;
+    const s = blankerText(nodes[id]).toLowerCase();
+    if (s && !verweisZiele.has(s)) verweisZiele.set(s, id);   // der erste gewinnt
+  }
+  for (const id in nodes){
+    if (id === ROOT) continue;
+    for (const v of verweiseAus(nodes[id])){
+      const ziel = verweisZiele.get(v.toLowerCase());
+      if (!ziel || ziel === id) continue;
+      if (!rueckverweise.has(ziel)) rueckverweise.set(ziel, new Set());
+      rueckverweise.get(ziel).add(id);
+    }
+  }
+}
+function verweisZiel(text){
+  return verweisZiele.get(String(text).trim().toLowerCase()) || null;
+}
 
 function parseQuery(q){
   const terms = [], tags = [];
@@ -1058,9 +1129,19 @@ function male(el, value, mitMerkmalen){
     return;
   }
   const stand = value + "\u0000" + query;
-  if (el.dataset.stand === stand) return;
+  // Ob ein Verweis aufgeht, haengt am Text ANDERER Punkte. Ohne das im
+  // Schluessel bliebe eine verweisende Zeile stehen, wenn ihr Ziel
+  // umbenannt wird — sie zeigte weiter einen Verweis, der ins Leere geht.
+  const voll = stand + verweisStand(value);
+  if (el.dataset.stand === voll) return;
   el.innerHTML = schmuecke(value, mitMerkmalen);
-  el.dataset.stand = stand;
+  el.dataset.stand = voll;
+}
+/* Leer, solange kein Verweis im Text steht — kostet dann nichts. */
+function verweisStand(text){
+  if (!text || text.indexOf("[[") === -1) return "";
+  return verweiseAus({ text: text, note: null })
+           .map(v => verweisZiel(v) ? "1" : "0").join("");
 }
 function schmuecke(text, mitMerkmalen){
   const terms = filter ? filter.q.terms.filter(Boolean) : [];
@@ -1074,6 +1155,7 @@ function schmuecke(text, mitMerkmalen){
       funde.push({ von: m.index, bis: m.index + m[0].length, klasse: klasseVon(m) });
   };
   sammle(TAG_RE, () => "tag");
+  sammle(VERWEIS_RE, m => "verweis" + (verweisZiel(m[1]) ? "" : " leer"));
   if (mitMerkmalen){
     sammle(FRIST_RE, () => "frist");
     sammle(PRIO_RE, m => "prio prio-" + m[1].toLowerCase());
@@ -1104,6 +1186,7 @@ function schmuecke(text, mitMerkmalen){
 
 function render(restoreFocus){
   filter = baueFilter();
+  baueVerweisnetz();
   const sf = $("#suche");
   if (document.activeElement !== sf) sf.value = query;
   $("#suche-x").hidden = !query;
@@ -1147,12 +1230,35 @@ function render(restoreFocus){
   titleEl.classList.toggle("empty", !zoomNode.text.trim());
   renderCrumbs();
   renderSubtitle();
+  zeichneRueckverweise();
 
   $("#blank").hidden = rowIndex.length > 0 || ansicht !== "gliederung";
   $("#status").textContent = statusText();
 
   // In den anderen Ansichten gibt es kein Feld, in das der Cursor gehoerte
   if (restoreFocus && ansicht === "gliederung") applyFocus();
+}
+
+/* Rueckverweise stehen im Fokus unter dem Titel — dort kosten sie keinen
+   Platz in den Zeilen und die Gliederung bleibt ruhig. */
+function zeichneRueckverweise(){
+  const el = $("#rueck");
+  el.textContent = "";
+  const quellen = zoomId !== ROOT ? rueckverweise.get(zoomId) : null;
+  if (!quellen || !quellen.size){ el.hidden = true; return; }
+  el.hidden = false;
+  const b = document.createElement("b");
+  b.textContent = quellen.size === 1 ? "1 Verweis hierher" : quellen.size + " Verweise hierher";
+  el.appendChild(b);
+  for (const id of quellen){
+    if (!nodes[id]) continue;
+    const k = document.createElement("button");
+    k.className = "rverweis";
+    k.textContent = blankerText(nodes[id]) || "Ohne Text";
+    k.title = pfadVon(id);
+    k.addEventListener("click", () => { setzeAnsicht("gliederung"); springeZu(id); });
+    el.appendChild(k);
+  }
 }
 
 function renderSubtitle(){
@@ -1865,6 +1971,15 @@ rowsEl.addEventListener("mousedown", e => {
     e.preventDefault();
     setzeSuche(e.target.textContent.trim());
     sucheEl.focus();
+    return;
+  }
+  // Klick auf einen Verweis springt zum Ziel
+  if (e.target.classList && e.target.classList.contains("verweis")){
+    e.preventDefault();
+    const innen = e.target.textContent.trim().replace(/^\[\[|\]\]$/g, "");
+    const ziel = verweisZiel(innen);
+    if (ziel) springeZu(ziel);
+    else toast("Kein Punkt heißt „" + innen + "“");
   }
 });
 
