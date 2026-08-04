@@ -49,8 +49,14 @@ Die Sichten sind gespeicherte Suchen (`!heute`, `!offen`, `!wichtig`), keine eig
 
 In der Notizzeile gelten die Zeichen nicht: sie ist Prosa.
 
-### Stufe 4 — Weitere Ansichten
+### Stufe 4 — Weitere Ansichten *(teilweise)*
 Kanban mit frei definierbaren Spalten, Kalender in Tag/Woche/Monat, Gantt mit Zeiträumen und Meilensteinen, Mindmap. Alles als SVG und CSS, ohne Bibliothek.
+
+Fertig sind **Gantt** und **Mindmap**, umschaltbar über die Kopfzeile und die Palette. Beide sind Projektionen: sie lesen dieselbe Zeilenauswahl wie die Gliederung, also gelten Fokus, Zuklappen und Suche dort unverändert.
+
+Im Gantt wird ein Punkt mit Zeitraum zum Balken, einer mit bloßer Frist zur Raute — der Meilenstein, den dieser Plan schon vorsah. Ein übergeordneter Punkt ohne eigenes Datum bekommt einen zusammenfassenden Balken vom frühesten Anfang bis zur spätesten Frist darunter; gerechnet wird über den ganzen Teilbaum, auch über zugeklappte Kinder. Undatierte Zweige erscheinen gar nicht. Die Mindmap ordnet denselben Zweig radial an, zeichnet die Verbindungen als SVG-Pfade und die Beschriftungen als HTML darüber.
+
+Offen: **Kalender** sowie **Kanban** — Letzteres erst, wenn `task.status` mehr als `offen` und `erledigt` kennt und es einen Ort für die Spaltendefinition gibt.
 
 ### Stufe 5 — Wissensnetz
 Interne Verweise `[[…]]`, Rückverweise, verwandte Themen. Spiegelungen: ein Punkt erscheint an mehreren Stellen, ohne kopiert zu werden.

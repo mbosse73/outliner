@@ -4,7 +4,7 @@ Arbeitsanweisung für Claude Code in diesem Repository.
 
 ## Was das hier ist
 
-Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 1600 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
+Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 2300 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
 
 ## Harte Regeln
 
@@ -36,7 +36,8 @@ Der `<script>`-Block ist in nummerierte Abschnitte geteilt. Eine Änderung gehö
 | 10 Speichern | `save`, `load`, `scheduleSave` |
 | 11 Datei | JSON- und Markdown-Ausgabe, Import, Menü |
 | 12 / 12b | `toast`, Suche, Favoriten, Befehlspalette |
-| 13 Start | Laden oder `seed()`, erstes `render` |
+| 13 Ansichten | `setzeAnsicht`, `zeichneGantt`, `zeichneMindmap`, `spannenRechner` |
+| 14 Start | Laden oder `seed()`, erstes `render` |
 
 ## Die zwei tragenden Entscheidungen
 
@@ -97,7 +98,9 @@ Für automatische Prüfungen eignet sich jsdom in einem Wegwerf-Verzeichnis auß
 
 ## Was als Nächstes ansteht
 
-Stufe 1 und 2 sind fertig. Stufe 3 sind Aufgaben: `task` liegt im Modell bereits bereit (`status`, `prio`, `start`, `due`, `progress`) und ist noch unbenutzt. Erst danach die weiteren Ansichten. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
+Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt und Mindmap gebaut. Es fehlen Kalender und Kanban. Kanban braucht vorher zwei Eingriffe ins Modell: `task.status` kennt nur `offen` und `erledigt`, und „frei definierbare Spalten" bräuchten einen Ort, den `save()` heute nicht hat. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
+
+Neue Ansichten sind Projektionen: sie lesen `rowIndex`, damit Fokus, Zuklappen und Suche ohne Zutun gelten. Keine Ansicht bekommt eigene Sichtbarkeitsregeln.
 
 ## Umgang mit Aufgaben
 

@@ -229,6 +229,85 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   background:var(--raise);border-radius:4px;padding:0 4px}
 .fortschritt-voll{color:var(--gut);background:var(--gut-s);font-weight:700}
 
+/* ---------- Stufe 4: Ansichten ---------- */
+.ansichten{flex-shrink:0;display:flex;gap:2px;padding:2px;border-radius:9px;
+  background:var(--paper);border:1px solid var(--rule)}
+.sicht{font-size:12px;color:var(--ink3);padding:4px 10px;border-radius:7px;
+  white-space:nowrap;transition:background-color .14s,color .14s}
+.sicht:hover{color:var(--ink)}
+.sicht.an{background:var(--tinte-s);color:var(--tinte);font-weight:600}
+.doc.weit{max-width:1280px}
+
+/* Gantt — Balken als Flaechen, kein SVG noetig.
+   Kopf, Netz und Zeilen benutzen dieselbe Aufteilung (.glinks fest,
+   .grechts flexibel), damit Namen und Balken zeilenweise fluchten. */
+.gantt{padding:6px 0 30px;--gnamen:clamp(150px,30%,340px)}
+.glinks,.gname{flex:0 0 var(--gnamen);min-width:0}
+.grechts{flex:1;min-width:0;position:relative}
+.gkopf{display:flex;height:24px;border-bottom:1px solid var(--rule);margin-bottom:6px}
+.gmonat{position:absolute;top:5px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+  padding-left:5px;overflow:hidden;white-space:nowrap;
+  border-left:1px solid var(--rule);height:19px}
+.gkoerper{position:relative}
+.gnetz{position:absolute;inset:0;display:flex;pointer-events:none}
+.gwoche{position:absolute;top:0;bottom:0;width:1px;background:var(--rule);opacity:.7}
+.gheute{position:absolute;top:0;bottom:0;width:1px;background:var(--tinte);opacity:.5}
+.gzeile{display:flex;align-items:center;height:27px;border-radius:7px}
+.gzeile:hover{background:var(--sheet)}
+.gname{font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;padding-right:12px;
+  padding-left:calc(var(--depth) * 13px + 2px)}
+.gzeile.erledigt .gname{color:var(--ink3);text-decoration:line-through;
+  text-decoration-color:var(--rule2)}
+.gbahn{flex:1;min-width:0;position:relative;height:100%}
+.gbalken{position:absolute;top:50%;transform:translateY(-50%);height:11px;
+  border-radius:3px;background:var(--rule2);min-width:3px;overflow:hidden}
+.gbalken.erledigt{background:var(--gut-s)}
+.gbalken.ueberfaellig{background:var(--signal-s)}
+.gfuell{position:absolute;left:0;top:0;bottom:0;background:var(--ink3);opacity:.5}
+.gbalken.erledigt .gfuell{background:var(--gut)}
+.gbalken.ueberfaellig .gfuell{background:var(--signal)}
+/* Zusammenfassung eines Elternpunktes: schmaler und blasser, damit sie nicht
+   mit einem selbst gesetzten Termin verwechselt wird */
+.gbalken.summe{height:5px;background:var(--ink3);opacity:.42;border-radius:2px}
+.graute{position:absolute;top:50%;width:9px;height:9px;
+  transform:translate(-50%,-50%) rotate(45deg);background:var(--ink2);border-radius:1.5px}
+.graute.erledigt{background:var(--gut)}
+.graute.ueberfaellig{background:var(--signal)}
+.gleer{padding:26px 4px;font-size:13px;color:var(--ink3);line-height:1.6;max-width:52ch}
+
+/* Mindmap — SVG zieht nur die Linien, die Beschriftungen liegen als HTML darueber.
+   Die Karte bekommt ihre Groesse aus der Blattzahl; passt sie nicht, rollt sie
+   in ihrer eigenen Flaeche, statt die Seite breit zu machen. */
+.mindmap{overflow:auto;max-height:76vh;border-radius:10px}
+.mkarte{position:relative}
+.mkarte svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mast{position:absolute;transform:translate(-50%,-50%);max-width:130px;
+  font-size:12.5px;line-height:1.3;color:var(--ink2);background:var(--sheet);
+  border:1px solid var(--rule);border-radius:8px;padding:4px 9px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:border-color .14s,color .14s}
+.mast:hover{border-color:var(--tinte);color:var(--tinte);z-index:2}
+/* nach aussen wachsen statt um den Punkt herum — sonst stossen die
+   Beschriftungen zweier Ringe aneinander */
+.mast.rechts{transform:translate(3px,-50%)}
+.mast.links{transform:translate(calc(-100% - 3px),-50%)}
+.mast.mitte{font-family:var(--serif);font-size:16px;color:var(--ink);
+  border-color:var(--rule2);max-width:220px;padding:6px 13px;
+  transform:translate(-50%,-50%);z-index:3}
+.mast.erledigt{color:var(--ink3);text-decoration:line-through;
+  text-decoration-color:var(--rule2)}
+.mast.ueberfaellig{border-color:var(--signal);color:var(--signal)}
+
+/* Die Kopfzeile ist eng. Wird es zu schmal, weicht die Umschaltleiste, bevor
+   sie den Pfad zerdrueckt — Strg+K fuehrt weiterhin zu jeder Ansicht. */
+@media(max-width:860px){ .ansichten{display:none} }
+
+@media(max-width:640px){
+  .gantt{--gnamen:42%}
+}
+
 /* ---------- Geraet im Dunkelmodus: Oberflaeche bleibt hell ---------- */
 @media (prefers-color-scheme:dark){
   :root{color-scheme:only light}
@@ -241,6 +320,14 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   .tr:hover,.tr.wahl,.feld .k{background:var(--paper)!important}
   .tag{background:var(--tinte-s)!important}
   .frist,.prio,.fortschritt{background:var(--raise)!important}
+  .ansichten{background:var(--paper)!important}
+  .sicht.an{background:var(--tinte-s)!important}
+  .gzeile:hover{background:var(--sheet)!important}
+  .gbalken{background:var(--rule2)!important}
+  .gbalken.erledigt{background:var(--gut-s)!important}
+  .gbalken.ueberfaellig{background:var(--signal-s)!important}
+  .gbalken.summe{background:var(--ink3)!important}
+  .mast{background:var(--sheet)!important}
   .row.ueberfaellig .frist{background:var(--signal-s)!important}
   .fortschritt-voll{background:var(--gut-s)!important}
   .kasten b{background:var(--sheet)!important}
@@ -268,6 +355,11 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
            placeholder="Gliederung durchsuchen" aria-label="Gliederung durchsuchen">
     <button class="x" id="suche-x" hidden title="Suche zurücksetzen">×</button>
   </div>
+  <div class="ansichten" role="group" aria-label="Ansicht">
+    <button class="sicht" data-sicht="gliederung">Gliederung</button>
+    <button class="sicht" data-sicht="gantt">Gantt</button>
+    <button class="sicht" data-sicht="mindmap">Mindmap</button>
+  </div>
   <div class="tools">
     <button class="tool" id="btn-collapse">Einklappen</button>
     <button class="tool" id="btn-file" aria-haspopup="true">Datei</button>
@@ -289,6 +381,8 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
     <div class="subtitle"><b id="subtitle"></b><i></i></div>
     <div id="rows"></div>
     <div class="blank" id="blank" hidden>Noch nichts hier. <button id="blank-add">Ersten Punkt schreiben</button></div>
+    <div class="gantt" id="gantt" hidden></div>
+    <div class="mindmap" id="mindmap" hidden></div>
   </div>
 </div>
 
@@ -333,6 +427,8 @@ let nodes = Object.create(null);
 let zoomId = ROOT;
 let query = "";      // aktuelle Suche
 let filter = null;   // {hit, keep, q} solange gesucht wird
+const ANSICHTEN = ["gliederung", "gantt", "mindmap"];
+let ansicht = "gliederung";
 
 function uid(){
   return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -943,19 +1039,29 @@ function render(restoreFocus){
   const fm = focusState.id ? rowMeta(focusState.id) : null;
   if (fm){ fm.ancestors.forEach(a => litPath.add(a)); litPath.add(fm.id); }
 
-  const seen = new Set();
-  let prev = null;
-  for (const meta of rowIndex){
-    let el = rowEls.get(meta.id);
-    if (!el){ el = buildRow(meta.id); rowEls.set(meta.id, el); }
-    updateRow(el, meta, litPath);
-    const expected = prev ? prev.nextSibling : rowsEl.firstChild;
-    if (el !== expected) rowsEl.insertBefore(el, expected);
-    prev = el;
-    seen.add(meta.id);
-  }
-  for (const [id, el] of Array.from(rowEls)){
-    if (!seen.has(id)){ el.remove(); rowEls.delete(id); }
+  ansichtZeigen();   // vor dem Zeichnen: eine verborgene Flaeche hat keine Breite
+
+  if (ansicht === "gliederung"){
+    const seen = new Set();
+    let prev = null;
+    for (const meta of rowIndex){
+      let el = rowEls.get(meta.id);
+      if (!el){ el = buildRow(meta.id); rowEls.set(meta.id, el); }
+      updateRow(el, meta, litPath);
+      const expected = prev ? prev.nextSibling : rowsEl.firstChild;
+      if (el !== expected) rowsEl.insertBefore(el, expected);
+      prev = el;
+      seen.add(meta.id);
+    }
+    for (const [id, el] of Array.from(rowEls)){
+      if (!seen.has(id)){ el.remove(); rowEls.delete(id); }
+    }
+  } else {
+    // Zeilen abraeumen: die Aufraeumschleife oben laeuft hier nicht, sonst
+    // blieben Zeilen geloeschter Punkte in rowEls stehen.
+    rowEls.forEach(el => el.remove());
+    rowEls.clear();
+    zeichneAnsicht();
   }
 
   const zoomNode = nodes[zoomId];
@@ -967,10 +1073,11 @@ function render(restoreFocus){
   renderCrumbs();
   renderSubtitle();
 
-  $("#blank").hidden = rowIndex.length > 0;
+  $("#blank").hidden = rowIndex.length > 0 || ansicht !== "gliederung";
   $("#status").textContent = statusText();
 
-  if (restoreFocus) applyFocus();
+  // In den anderen Ansichten gibt es kein Feld, in das der Cursor gehoerte
+  if (restoreFocus && ansicht === "gliederung") applyFocus();
 }
 
 function renderSubtitle(){
@@ -1490,7 +1597,7 @@ function scheduleSave(){
 }
 function save(){
   try{
-    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, zoomId, nodes }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, zoomId, ansicht, nodes }));
     savedAt = new Date();
     $("#status").textContent = statusText();
   } catch (err){
@@ -1518,6 +1625,8 @@ function load(){
     if (!data || !data.nodes || !data.nodes[ROOT]) return false;
     nodes = data.nodes;
     zoomId = nodes[data.zoomId] ? data.zoomId : ROOT;
+    // Aeltere Staende kennen das Feld nicht und landen auf der Gliederung
+    ansicht = ANSICHTEN.indexOf(data.ansicht) >= 0 ? data.ansicht : "gliederung";
     for (const id in nodes){
       const n = nodes[id];
       if (!Array.isArray(n.children)) n.children = [];
@@ -1582,6 +1691,7 @@ function importJSON(file){
       if (!data.nodes || !data.nodes[ROOT]) throw new Error("Format");
       nodes = data.nodes;
       zoomId = ROOT;
+      ansicht = "gliederung";
       for (const id in nodes){
         const n = nodes[id];
         if (!Array.isArray(n.children)) n.children = [];
@@ -1779,6 +1889,9 @@ const BEFEHLE = [
   { a: "Sicht", t: "Heute", m: "Offenes, das fällig oder überfällig ist", run: () => setzeSuche("!heute") },
   { a: "Sicht", t: "Offen", m: "Alle offenen Aufgaben", run: () => setzeSuche("!offen") },
   { a: "Sicht", t: "Wichtig", m: "Offenes mit hoher Priorität", run: () => setzeSuche("!wichtig") },
+  { a: "Ansicht", t: "Gliederung", m: "Schreiben und umbauen", run: () => setzeAnsicht("gliederung") },
+  { a: "Ansicht", t: "Gantt", m: "Zeiträume als Balken, Fristen als Rauten", run: () => setzeAnsicht("gantt") },
+  { a: "Ansicht", t: "Mindmap", m: "Derselbe Zweig, radial angeordnet", run: () => setzeAnsicht("mindmap") },
   { a: "Ansicht", t: "Ein- und ausklappen", m: "Alle Zweige umschalten", run: faltenUmschalten },
   { a: "Ansicht", t: "Fokus verlassen", m: "Eine Ebene hinaus", run: zoomOut },
   { a: "Ansicht", t: "Suche zurücksetzen", m: "Ganze Gliederung zeigen", run: () => setzeSuche("") },
@@ -1909,7 +2022,298 @@ palEingabe.addEventListener("keydown", e => {
 palEl.addEventListener("mousedown", e => { if (e.target === palEl) palSchliessen(); });
 
 /* =========================================================================
-   13 — Start
+   13 — Ansichten
+   Gantt und Mindmap sind Projektionen derselben Nodes. Beide lesen
+   rowIndex — damit gelten Fokus, Zuklappen und Suche dort unveraendert,
+   ohne dass eine Ansicht eigene Sichtbarkeitsregeln bekaeme.
+   ========================================================================= */
+
+const ganttEl = $("#gantt");
+const mindmapEl = $("#mindmap");
+const docEl = document.querySelector(".doc");
+
+function ansichtZeigen(){
+  rowsEl.hidden = ansicht !== "gliederung";
+  ganttEl.hidden = ansicht !== "gantt";
+  mindmapEl.hidden = ansicht !== "mindmap";
+  docEl.classList.toggle("weit", ansicht !== "gliederung");
+  document.querySelectorAll(".sicht").forEach(b =>
+    b.classList.toggle("an", b.dataset.sicht === ansicht));
+}
+function setzeAnsicht(a){
+  if (ansicht === a) return;
+  ansicht = a;
+  scheduleSave();
+  render(a === "gliederung");
+  $("#sheet").scrollTop = 0;
+}
+function zeichneAnsicht(){
+  if (ansicht === "gantt") zeichneGantt();
+  else if (ansicht === "mindmap") zeichneMindmap();
+}
+document.querySelectorAll(".sicht").forEach(b =>
+  b.addEventListener("click", () => setzeAnsicht(b.dataset.sicht)));
+
+/* --- Tage rechnen. Gespeichert wird JJJJ-MM-TT, das laesst sich direkt
+       vergleichen; nur fuer Abstaende braucht es kurz ein Date. --- */
+function tagAus(iso){
+  const [j, m, t] = iso.split("-").map(Number);
+  return new Date(j, m - 1, t);
+}
+function tageZwischen(a, b){ return Math.round((tagAus(b) - tagAus(a)) / 86400000); }
+function plusTage(iso, n){ const d = tagAus(iso); d.setDate(d.getDate() + n); return alsISO(d); }
+function aufMontag(iso){ return plusTage(iso, -((tagAus(iso).getDay() + 6) % 7)); }
+
+/* Ein eigener Termin schlaegt die Zusammenfassung. Gerechnet wird ueber den
+   ganzen Teilbaum, auch ueber zugeklappte Kinder: collapsed bestimmt, welche
+   Zeilen erscheinen, nicht welche Termine zaehlen. */
+function spannenRechner(){
+  const merk = new Map();
+  const rechne = id => {
+    if (merk.has(id)) return merk.get(id);
+    const n = nodes[id];
+    let s = null;
+    if (n && n.task && (n.task.due || n.task.start)){
+      const a = n.task.start || n.task.due;
+      const b = n.task.due || n.task.start;
+      s = { von: a <= b ? a : b, bis: a <= b ? b : a, eigen: true };
+    } else if (n){
+      let von = null, bis = null;
+      for (const cid of n.children){
+        const k = rechne(cid);
+        if (!k) continue;
+        if (!von || k.von < von) von = k.von;
+        if (!bis || k.bis > bis) bis = k.bis;
+      }
+      if (von) s = { von, bis, eigen: false };
+    }
+    merk.set(id, s);
+    return s;
+  };
+  return rechne;
+}
+
+const MONAT_FMT = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
+
+function zeichneGantt(){
+  ganttEl.textContent = "";
+  const spanne = spannenRechner();
+  // Nur Zeilen mit Termin. Weil sich die Spanne nach oben fortsetzt, bleiben
+  // die uebergeordneten Punkte als Weg stehen — dieselbe Idee wie keep in
+  // der Suche. Undatierte Zweige bleiben ganz weg, statt leer mitzulaufen.
+  const zeilen = rowIndex.map(m => ({ meta: m, s: spanne(m.id) })).filter(z => z.s);
+  const mit = zeilen;
+
+  if (!mit.length){
+    const leer = document.createElement("div");
+    leer.className = "gleer";
+    leer.textContent = "Noch nichts mit Datum. Ein Punkt kommt hierher, sobald er eines trägt: "
+      + "@2026-03-09 setzt eine Frist, @2026-03-02..2026-03-06 einen Zeitraum. "
+      + "Übergeordnete Punkte fassen zusammen, was darunter liegt.";
+    ganttEl.appendChild(leer);
+    return;
+  }
+
+  let von = mit[0].s.von, bis = mit[0].s.bis;
+  for (const z of mit){
+    if (z.s.von < von) von = z.s.von;
+    if (z.s.bis > bis) bis = z.s.bis;
+  }
+  von = aufMontag(von);
+  bis = plusTage(aufMontag(bis), 6);
+  const tage = tageZwischen(von, bis) + 1;
+  const bei = iso => (tageZwischen(von, iso) / tage) * 100;
+
+  const spalte = k => { const d = document.createElement("div"); d.className = k; return d; };
+
+  // Kopf: Monatsnamen ueber der Zeitachse
+  const kopf = spalte("gkopf");
+  kopf.appendChild(spalte("glinks"));
+  const kopfRechts = spalte("grechts");
+  let m = von;
+  while (m <= bis){
+    const erster = m.slice(0, 8) + "01";
+    const naechster = plusTage(m.slice(0, 8) + "01", 32);
+    const monatEnde = plusTage(naechster.slice(0, 8) + "01", -1);
+    const ende = monatEnde < bis ? monatEnde : bis;
+    const eti = document.createElement("span");
+    eti.className = "gmonat";
+    eti.style.left = Math.max(0, bei(m)) + "%";
+    eti.style.width = ((tageZwischen(m, ende) + 1) / tage) * 100 + "%";
+    eti.textContent = MONAT_FMT.format(tagAus(erster));
+    kopfRechts.appendChild(eti);
+    m = plusTage(ende, 1);
+  }
+  kopf.appendChild(kopfRechts);
+  ganttEl.appendChild(kopf);
+
+  const koerper = spalte("gkoerper");
+
+  // Netz: Wochenlinien und Heute, in derselben Aufteilung wie die Zeilen
+  const netz = spalte("gnetz");
+  netz.appendChild(spalte("glinks"));
+  const netzRechts = spalte("grechts");
+  for (let t = 0; t < tage; t += 7){
+    const l = document.createElement("i");
+    l.className = "gwoche";
+    l.style.left = (t / tage) * 100 + "%";
+    netzRechts.appendChild(l);
+  }
+  const heute = heuteISO();
+  if (heute >= von && heute <= bis){
+    const l = document.createElement("i");
+    l.className = "gheute";
+    l.style.left = bei(heute) + "%";
+    l.title = "Heute";
+    netzRechts.appendChild(l);
+  }
+  netz.appendChild(netzRechts);
+  koerper.appendChild(netz);
+
+  for (const z of zeilen){
+    const n = nodes[z.meta.id];
+    const zeile = spalte("gzeile");
+    zeile.style.setProperty("--depth", z.meta.depth);
+    zeile.classList.toggle("erledigt", istErledigt(n));
+
+    const name = spalte("gname");
+    // Termin und Fortschritt stehen als Balken daneben — sie muessen im
+    // Namen nicht noch einmal buchstabiert werden. Tags und Prioritaet
+    // bleiben, die zeigt hier sonst nichts.
+    const kurz = n.text.replace(FRIST_RE, "").replace(PROZENT_RE, "")
+                       .replace(/\s{2,}/g, " ").trim();
+    name.innerHTML = schmuecke(kurz || n.text.trim() || "Ohne Text", true);
+    name.title = n.text.trim() || "Ohne Text";
+    zeile.appendChild(name);
+
+    const bahn = spalte("gbahn");
+    if (z.s){
+      const zustand = istUeberfaellig(n) ? "ueberfaellig" : istErledigt(n) ? "erledigt" : "";
+      if (z.s.von === z.s.bis && z.s.eigen){
+        // Zeitpunkt ohne Anfang: Meilenstein
+        const r = document.createElement("i");
+        r.className = "graute " + zustand;
+        r.style.left = (bei(z.s.von) + (0.5 / tage) * 100) + "%";
+        r.title = z.s.von;
+        bahn.appendChild(r);
+      } else {
+        const b = spalte("gbalken " + (z.s.eigen ? zustand : "summe"));
+        b.style.left = bei(z.s.von) + "%";
+        b.style.width = ((tageZwischen(z.s.von, z.s.bis) + 1) / tage) * 100 + "%";
+        b.title = z.s.von + " bis " + z.s.bis + (z.s.eigen ? "" : " (zusammengefasst)");
+        if (z.s.eigen && n.task && n.task.progress){
+          const f = document.createElement("i");
+          f.className = "gfuell";
+          f.style.width = Math.min(100, n.task.progress) + "%";
+          b.appendChild(f);
+        }
+        bahn.appendChild(b);
+      }
+    }
+    zeile.appendChild(bahn);
+    koerper.appendChild(zeile);
+  }
+  ganttEl.appendChild(koerper);
+}
+
+/* Mindmap: das SVG zieht nur die Verbindungen, die Beschriftungen liegen als
+   HTML darueber — nur so bekommen sie Schriftvariablen, Ellipse und Zeiger. */
+function zeichneMindmap(){
+  mindmapEl.textContent = "";
+  const sichtbar = new Set(rowIndex.map(r => r.id));
+  const kinder = id => (nodes[id] ? nodes[id].children.filter(c => sichtbar.has(c)) : []);
+
+  const blaetter = id => {
+    const k = kinder(id);
+    return k.length ? k.reduce((s, c) => s + blaetter(c), 0) : 1;
+  };
+  let tiefstes = 0;
+  rowIndex.forEach(r => { if (r.depth + 1 > tiefstes) tiefstes = r.depth + 1; });
+  tiefstes = Math.max(1, tiefstes);
+
+  /* Der aeussere Ring muss allen Blaettern Platz lassen: bei L Blaettern
+     braucht sein Umfang mindestens L * ZEILE. Daraus folgt der Radius —
+     geraten wird hier nichts. */
+  const ZEILE = 42;
+  const blattzahl = Math.max(1, blaetter(zoomId));
+  const noetig = (blattzahl * ZEILE) / (2 * Math.PI);
+  // Der Ringabstand muss zudem eine Beschriftung fassen, sonst ragt sie in
+  // den naechsten Ring — 130px Textbreite plus Luft.
+  const schritt = Math.min(240, Math.max(150, noetig / tiefstes));
+  const rand = 165;                       // Platz fuer die Beschriftungen aussen
+  const seite = 2 * schritt * tiefstes + rand * 2;
+  const breite = Math.max(mindmapEl.clientWidth || 900, seite);
+  const hoehe = seite;
+
+  const karte = document.createElement("div");
+  karte.className = "mkarte";
+  karte.style.width = breite + "px";
+  karte.style.height = hoehe + "px";
+  const cx = breite / 2, cy = hoehe / 2;
+
+  const punkte = [];
+  const lege = (id, tiefe, a0, a1) => {
+    const w = (a0 + a1) / 2;
+    const r = tiefe * schritt;
+    punkte.push({ id, tiefe, x: cx + Math.cos(w) * r, y: cy + Math.sin(w) * r,
+                  rechts: Math.cos(w) >= 0 });
+    const k = kinder(id);
+    if (!k.length) return;
+    const gesamt = blaetter(id) || 1;
+    let a = a0;
+    for (const c of k){
+      const anteil = blaetter(c) / gesamt;
+      lege(c, tiefe + 1, a, a + (a1 - a0) * anteil);
+      a += (a1 - a0) * anteil;
+    }
+  };
+  lege(zoomId, 0, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI);
+
+  const wo = new Map(punkte.map(p => [p.id, p]));
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 " + breite + " " + hoehe);
+  for (const p of punkte){
+    for (const cid of kinder(p.id)){
+      const k = wo.get(cid);
+      if (!k) continue;
+      const pfad = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      const mx = (p.x + k.x) / 2;
+      pfad.setAttribute("d", "M" + p.x + " " + p.y + " C" + mx + " " + p.y +
+                             " " + mx + " " + k.y + " " + k.x + " " + k.y);
+      pfad.setAttribute("fill", "none");
+      pfad.setAttribute("stroke", "var(--rule2)");
+      pfad.setAttribute("stroke-width", "1");
+      svg.appendChild(pfad);
+    }
+  }
+  karte.appendChild(svg);
+
+  for (const p of punkte){
+    const n = nodes[p.id];
+    const b = document.createElement("button");
+    b.className = "mast" + (p.tiefe === 0 ? " mitte" : (p.rechts ? " rechts" : " links")) +
+                  (istErledigt(n) ? " erledigt" : "") +
+                  (istUeberfaellig(n) ? " ueberfaellig" : "");
+    b.style.left = p.x + "px";
+    b.style.top = p.y + "px";
+    // Abgeschnittene Rohmarken helfen niemandem; den Zustand tragen hier
+    // Durchstreichung und Rahmenfarbe.
+    const kurz = n.text.replace(FRIST_RE, "").replace(PROZENT_RE, "")
+                       .replace(PRIO_RE, "").replace(/\s{2,}/g, " ").trim();
+    b.innerHTML = schmuecke(kurz || n.text.trim() || "Ohne Text", false);
+    b.title = n.text.trim() || "Ohne Text";
+    b.addEventListener("click", () => { setzeAnsicht("gliederung"); zoomTo(p.id); });
+    karte.appendChild(b);
+  }
+
+  mindmapEl.appendChild(karte);
+  // auf die Mitte einrollen, sonst begaenne die Karte in der Ecke
+  mindmapEl.scrollLeft = (breite - mindmapEl.clientWidth) / 2;
+  mindmapEl.scrollTop = (hoehe - mindmapEl.clientHeight) / 2;
+}
+
+/* =========================================================================
+   14 — Start
    ========================================================================= */
 
 if (!load()) { seed(); save(); }

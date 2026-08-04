@@ -65,6 +65,16 @@ Die Priorität lässt sich auch über die Palette setzen — der Befehl schreibt
 
 In der Notizzeile gilt nichts davon: sie ist Prosa, ein Datum darin setzt keine Frist.
 
+## Ansichten
+
+Oben rechts stehen drei Ansichten derselben Punkte; `Strg`+`K` führt ebenfalls hin. Was Sie gerade sehen, hängt nicht davon ab, wo Sie geschrieben haben — Fokus, Zuklappen und Suche gelten überall gleich. Wer nach `!offen` sucht und dann aufs Gantt wechselt, sieht dort genau diese Auswahl.
+
+- **Gliederung** — schreiben und umbauen. Nur hier wird bearbeitet.
+- **Gantt** — ein Punkt mit Zeitraum wird zum Balken, einer mit bloßer Frist zur Raute. Ein übergeordneter Punkt ohne eigenes Datum fasst zusammen, was darunter liegt: vom frühesten Anfang bis zur spätesten Frist, auch bei zugeklapptem Zweig. Punkte ganz ohne Datum erscheinen nicht.
+- **Mindmap** — derselbe Zweig radial angeordnet. Ein Klick springt in einen Punkt und wechselt zurück zur Gliederung.
+
+Auf schmalen Fenstern weicht die Leiste, damit sie den Pfad nicht zerdrückt; die Palette führt weiterhin zu jeder Ansicht.
+
 ## Daten
 
 Gespeichert wird laufend im `localStorage` des Browsers.
@@ -78,7 +88,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3. Als Nächstes kommen die weiteren Ansichten aus Stufe 4 — Kanban, Kalender, Gantt, Mindmap. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt und Mindmap. Es fehlen Kalender und Kanban. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
