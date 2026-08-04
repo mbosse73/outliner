@@ -69,8 +69,14 @@ Interne Verweise `[[…]]`, Rückverweise, verwandte Themen. Spiegelungen: ein P
 
 Zur Einordnung, falls die Frage wiederkommt: Verweise und Rückverweise wären klein — sie säßen auf demselben Muster wie `#tag`, `@datum` und `!hoch`. „Verwandte Themen" bräuchte zuerst eine Festlegung, was verwandt heißen soll. Spiegelungen wären der große Eingriff: sie brechen die Annahme, dass ein Punkt genau ein `parentId` hat, womit die Identität einer Zeile nicht mehr die `id` wäre, sondern `id` plus Pfad — daran hängen `rowIndex`, `rowEls`, `rowMeta`, `rowPos` und `focusState`.
 
-### Stufe 6 — Dokumente
+### Stufe 6 — Dokumente *(fertig)*
 Einzelne Bereiche als eigenständige Dokumente behandeln, Import und Export, Archivierung.
+
+**Das Dokument ist der fokussierte Zweig** — kein eigenes Merkmal am Punkt. Der Fokusmodus war bereits das Dokument, ihm fehlte nur der eigene Export: `Datei › Diesen Zweig sichern` schreibt eine vollwertige Sicherung, in der die Zweigwurzel auf `root` umgeschlüsselt ist. Sie lässt sich deshalb wie jede andere Sicherung wieder öffnen.
+
+**Markdown wird eingelesen** und dabei **am Fokus eingefügt, nicht ersetzt**. Eine Datei, die den gesamten Bestand überschreibt, wäre der teuerste Fehler dieser App; die JSON-Öffnung bleibt der einzige Weg, der ersetzt. Der Import läuft in einer Transaktion — ein `Strg+Z` nimmt ihn vollständig zurück. Gelesen wird mindestens die eigene Ausgabe: Einrückung, Notizzeilen und `- [ ]` / `- [x]`.
+
+**Archiviert** wird über das Feld `archiviert`. Ausgeblendet wird an **einer einzigen Stelle**, in `visibleRows()` — weil Gantt, Kalender und Mindmap von dort lesen, gilt es überall, ohne dass eine Ansicht eine eigene Regel bekäme. Wiederzufinden über die Suche `!archiv`; der Untertitel nennt zusätzlich die Zahl des Archivierten, damit ein archivierter Zweig nicht praktisch verschwindet. In der JSON-Sicherung ist Archiviertes enthalten (eine Sicherung muss vollständig sein), in der Markdown-Ausgabe nicht (das ist ein Leseformat).
 
 ### Später
 KI-Unterstützung für Zusammenfassung und Strukturierung, automatische Projektplanung, Synchronisation zwischen Geräten, Vorlagen, Automatisierungen.

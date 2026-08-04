@@ -4,7 +4,7 @@ Arbeitsanweisung für Claude Code in diesem Repository.
 
 ## Was das hier ist
 
-Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 2600 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
+Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 2800 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
 
 ## Harte Regeln
 
@@ -34,7 +34,7 @@ Der `<script>`-Block ist in nummerierte Abschnitte geteilt. Eine Änderung gehö
 | 8 Tastatur | ein `keydown` auf `document`, Reihenfolge ist bedeutsam |
 | 9 Eingaben übernehmen | `commitField`, `input`- und `focus`-Ereignisse |
 | 10 Speichern | `save`, `load`, `scheduleSave` |
-| 11 Datei | JSON- und Markdown-Ausgabe, Import, Menü |
+| 11 Datei | JSON- und Markdown-Ausgabe (ganz oder je Zweig), JSON- und Markdown-Import, Menü |
 | 12 / 12b | `toast`, Suche, Favoriten, Befehlspalette |
 | 13 Ansichten | `setzeAnsicht`, `zeichneGantt`, `zeichneKalender`, `zeichneMindmap`, `spannenRechner` |
 | 14 Start | Laden oder `seed()`, erstes `render` |
@@ -98,7 +98,12 @@ Für automatische Prüfungen eignet sich jsdom in einem Wegwerf-Verzeichnis auß
 
 ## Was als Nächstes ansteht
 
-Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut.
+Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut, Stufe 6 ist fertig.
+
+Zwei Regeln aus Stufe 6, die nicht „aufgeräumt" werden dürfen:
+
+- **`visibleRows()` ist die einzige Stelle, die Archiviertes ausblendet.** Weil alle Ansichten von dort lesen, gilt es überall. Wer daneben eine zweite Prüfung einbaut, erzeugt Abweichungen zwischen den Ansichten — und übersieht dabei leicht den Kalender, der `visibleRows(true)` nimmt.
+- **Markdown-Import fügt am Fokus ein und ersetzt nie.** Nur die JSON-Öffnung ersetzt den Bestand. Das ist Absicht, keine Lücke.
 
 **Zurückgestellt und ausdrücklich keine Zusage: Kanban und die gesamte Stufe 5.** Beides nicht anfangen, ohne dass jemand es erneut verlangt — auch nicht in Teilen und auch nicht, weil KONZEPT.md die Stufen aufzählt. Der Stufenplan dort ist eine Absichtserklärung, kein offener Auftrag.
 

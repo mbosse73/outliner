@@ -56,7 +56,7 @@ button{font:inherit;border:0;background:transparent;cursor:pointer;color:inherit
 .tool{font-size:12.5px;color:var(--ink2);border:1px solid var(--rule2);border-radius:8px;
   padding:5px 12px;background:var(--paper)}
 .tool:hover{background:var(--raise);color:var(--ink)}
-.menu{position:absolute;top:calc(100% + 9px);right:0;min-width:224px;padding:5px;
+.menu{position:absolute;top:calc(100% + 9px);right:0;min-width:268px;padding:5px;
   background:var(--sheet);border:1px solid var(--rule2);border-radius:10px;
   box-shadow:0 14px 40px rgba(26,26,24,.16);display:none;z-index:30}
 .menu.open{display:block}
@@ -228,6 +228,13 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
 .fortschritt{font-family:var(--mono);font-size:11px;color:var(--ink3);
   background:var(--raise);border-radius:4px;padding:0 4px}
 .fortschritt-voll{color:var(--gut);background:var(--gut-s);font-weight:700}
+
+/* ---------- Stufe 6: Archiv ---------- */
+/* Gedaempft statt farbig — Archiviertes ist nicht dringend, nur beiseite.
+   Sichtbar wird es ohnehin nur, wenn man ausdruecklich danach sucht. */
+.row.archiviert .text{color:var(--ink3)}
+.row.archiviert .bullet i{background:var(--rule);box-shadow:0 0 0 3px var(--raise)}
+.menu button[hidden],.menu hr[hidden]{display:none}
 
 /* ---------- Stufe 4: Ansichten ---------- */
 .ansichten{flex-shrink:0;display:flex;gap:2px;padding:2px;border-radius:9px;
@@ -432,12 +439,15 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
     <div class="menu" id="menu-file">
       <button data-act="json">Sicherung speichern (.json)</button>
       <button data-act="md">Als Markdown speichern (.md)</button>
+      <hr class="nur-fokus">
+      <button data-act="zweig-json" class="nur-fokus">Diesen Zweig sichern (.json)</button>
+      <button data-act="zweig-md" class="nur-fokus">Diesen Zweig als Markdown (.md)</button>
       <hr>
-      <button data-act="open">Sicherung öffnen …</button>
+      <button data-act="open">Öffnen (.json oder .md) …</button>
       <hr>
       <button data-act="reset">Alles verwerfen</button>
     </div>
-    <input type="file" id="file-input" accept=".json,application/json" hidden>
+    <input type="file" id="file-input" accept=".json,.md,.markdown,.txt,application/json,text/markdown" hidden>
   </div>
 </header>
 
@@ -508,7 +518,7 @@ function makeNode(text){
   const now = Date.now();
   return {
     id: uid(), parentId: null, children: [],
-    text: text || "", note: null, collapsed: false, fav: false,
+    text: text || "", note: null, collapsed: false, fav: false, archiviert: false,
     // ab Stufe 3 belegt, jetzt schon im Modell reserviert:
     tags: [], task: null,
     created: now, modified: now
@@ -858,7 +868,7 @@ function parseQuery(q){
   const terms = [], tags = [];
   let favOnly = false, aufgabeOnly = false, offenOnly = false,
       erledigtOnly = false, faelligOnly = false, ueberfaelligOnly = false,
-      wichtigOnly = false, prioOnly = null;
+      wichtigOnly = false, prioOnly = null, archivOnly = false;
   q.trim().split(/\s+/).filter(Boolean).forEach(t => {
     const m = t.toLowerCase();
     if (m === "!fav" || m === "!angeheftet") favOnly = true;
@@ -868,12 +878,13 @@ function parseQuery(q){
     else if (m === "!heute") faelligOnly = true;
     else if (m === "!überfällig" || m === "!ueberfaellig") ueberfaelligOnly = true;
     else if (m === "!wichtig") wichtigOnly = true;
+    else if (m === "!archiv" || m === "!archiviert") archivOnly = true;
     else if (PRIOS.indexOf(m.slice(1)) >= 0 && m[0] === "!") prioOnly = m.slice(1);
     else if (t.length > 1 && t[0] === "#") tags.push(t.slice(1).toLowerCase());
     else terms.push(t.toLowerCase());
   });
   return { terms, tags, favOnly, aufgabeOnly, offenOnly, erledigtOnly,
-           faelligOnly, ueberfaelligOnly, wichtigOnly, prioOnly };
+           faelligOnly, ueberfaelligOnly, wichtigOnly, prioOnly, archivOnly };
 }
 function trifft(n, q){
   if (q.favOnly && !n.fav) return false;
@@ -884,6 +895,7 @@ function trifft(n, q){
   if (q.ueberfaelligOnly && !istUeberfaellig(n)) return false;
   if (q.wichtigOnly && !istWichtig(n)) return false;
   if (q.prioOnly && !(istAufgabe(n) && n.task.prio === q.prioOnly)) return false;
+  if (q.archivOnly && !n.archiviert) return false;
   const heu = (n.text + " " + (n.note || "")).toLowerCase();
   if (!q.terms.every(t => heu.includes(t))) return false;
   if (q.tags.length){
@@ -914,12 +926,17 @@ function baueFilter(){
    zugeklapptes Projekt seine Termine nicht still mitnimmt. */
 function visibleRows(ohneFalten){
   const out = [];
+  // Die EINZIGE Stelle, die Archiviertes ausblendet. Weil Gantt, Kalender und
+  // Mindmap alle von hier lesen, gilt es dort ohne weiteres Zutun. Bewusst
+  // nicht am ohneFalten-Argument haengend — sonst waere der Kalender das Loch.
+  const zeigeArchiv = !!(filter && filter.q.archivOnly);
   const walk = (id, depth, ancestors) => {
     const n = nodes[id];
     if (!n) return;
     for (const cid of n.children){
       const c = nodes[cid];
       if (!c) continue;
+      if (c.archiviert && !zeigeArchiv) continue;
       if (filter){
         if (!filter.keep.has(cid)) continue;          // ohne Treffer im Zweig: weg
         out.push({ id: cid, depth, ancestors });
@@ -1028,6 +1045,7 @@ function updateRow(el, meta, litPath){
   fold.classList.toggle("leaf", n.children.length === 0);
 
   el.classList.toggle("fav", !!n.fav);
+  el.classList.toggle("archiviert", !!n.archiviert);
   el.classList.toggle("treffer", !!(filter && filter.hit.has(meta.id)));
 
   el.classList.toggle("aufgabe", istAufgabe(n));
@@ -1168,12 +1186,18 @@ function renderSubtitle(){
     return;
   }
   const total = Object.keys(nodes).length - 1;
+  let text;
   if (zoomId === ROOT){
-    el.textContent = total === 0 ? "Leer" : total + (total === 1 ? " Punkt" : " Punkte");
+    text = total === 0 ? "Leer" : total + (total === 1 ? " Punkt" : " Punkte");
   } else {
     const sub = countSubtree(zoomId) - 1;
-    el.textContent = "Fokus · " + sub + (sub === 1 ? " Punkt" : " Punkte");
+    text = "Fokus · " + sub + (sub === 1 ? " Punkt" : " Punkte");
   }
+  // Ohne diesen Hinweis waere ein archivierter Zweig praktisch verschwunden
+  let archiviert = 0;
+  for (const id in nodes) if (id !== ROOT && nodes[id].archiviert) archiviert++;
+  if (archiviert) text += " · " + archiviert + " archiviert";
+  el.textContent = text;
 }
 function countSubtree(id){
   const n = nodes[id];
@@ -1715,6 +1739,7 @@ function load(){
       if (!Array.isArray(n.tags)) n.tags = [];
       if (n.task === undefined) n.task = null;
       if (n.fav === undefined) n.fav = false;
+      if (n.archiviert === undefined) n.archiviert = false;
       aufgabeNormalisieren(n);
     }
     savedAt = new Date();
@@ -1740,20 +1765,44 @@ function stamp(){
   const p = x => String(x).padStart(2, "0");
   return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes());
 }
-function safeName(){
-  const t = nodes[ROOT].text.trim() || "outliner";
+function safeName(vonId){
+  const t = nodes[vonId || ROOT].text.trim() || "outliner";
   return t.replace(/[^\wäöüÄÖÜß \-]/g, "").replace(/\s+/g, "-").toLowerCase();
 }
-function exportJSON(){
-  save();
-  download(safeName() + "_" + stamp() + ".json", JSON.stringify({ v: 1, zoomId: ROOT, nodes }, null, 1), "application/json");
-  toast("Sicherung gespeichert");
+
+/* Ein einzelner Zweig als eigenstaendige Sicherung. Damit importJSON() ihn
+   wieder lesen kann, braucht die Datei einen Node unter ROOT — die
+   Zweigwurzel wird deshalb auf ROOT umgeschluesselt. */
+function zweigAlsBestand(vonId){
+  const raus = Object.create(null);
+  const hol = id => {
+    const n = clone(nodes[id]);
+    raus[id === vonId ? ROOT : id] = n;
+    if (id === vonId){ n.id = ROOT; n.parentId = null; }
+    for (const c of n.children) hol(c);
+  };
+  hol(vonId);
+  // Kinder der Zweigwurzel zeigen noch auf die alte Kennung
+  for (const c of raus[ROOT].children) if (raus[c]) raus[c].parentId = ROOT;
+  return raus;
 }
-function exportMarkdown(){
-  const lines = ["# " + (nodes[ROOT].text.trim() || "Outliner"), ""];
-  const walk = (id, depth) => {
-    for (const cid of nodes[id].children){
+
+function exportJSON(vonId){
+  save();
+  const id = vonId || ROOT;
+  const bestand = id === ROOT ? nodes : zweigAlsBestand(id);
+  download(safeName(id) + "_" + stamp() + ".json",
+    JSON.stringify({ v: 1, zoomId: ROOT, nodes: bestand }, null, 1), "application/json");
+  toast(id === ROOT ? "Sicherung gespeichert" : "Zweig gespeichert");
+}
+
+function exportMarkdown(vonId){
+  const id = vonId || ROOT;
+  const lines = ["# " + (nodes[id].text.trim() || "Outliner"), ""];
+  const walk = (vid, depth) => {
+    for (const cid of nodes[vid].children){
       const n = nodes[cid];
+      if (n.archiviert) continue;          // Markdown ist ein Leseformat
       const pad = "  ".repeat(depth);
       const marke = n.task ? (n.task.status === "erledigt" ? "[x] " : "[ ] ") : "";
       lines.push(pad + "- " + marke + n.text);
@@ -1761,10 +1810,73 @@ function exportMarkdown(){
       walk(cid, depth + 1);
     }
   };
-  walk(ROOT, 0);
-  download(safeName() + "_" + stamp() + ".md", lines.join("\n") + "\n", "text/markdown");
-  toast("Markdown gespeichert");
+  walk(id, 0);
+  download(safeName(id) + "_" + stamp() + ".md", lines.join("\n") + "\n", "text/markdown");
+  toast(id === ROOT ? "Markdown gespeichert" : "Zweig als Markdown gespeichert");
 }
+/* --- Markdown einlesen. Eingefuegt wird am Fokus, nicht ersetzt: eine
+       Datei, die den ganzen Bestand ueberschreibt, waere der teuerste
+       Fehler dieser App. Muss mindestens die eigene Ausgabe wieder lesen. --- */
+const MD_PUNKT_RE = /^(\s*)[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/;
+
+function markdownLesen(text){
+  const wurzel = { kinder: [], tiefe: -1 };
+  const stapel = [wurzel];
+  let letzter = null;
+  for (const roh of String(text).replace(/\r/g, "").split("\n")){
+    if (!roh.trim()){ continue; }
+    if (/^#{1,6}\s/.test(roh.trim()) && !letzter) continue;      // Titelzeile
+    const zeile = roh.replace(/\t/g, "  ");
+    const m = zeile.match(MD_PUNKT_RE);
+    if (m){
+      const tiefe = Math.floor(m[1].length / 2);
+      const eintrag = { text: m[3].trim(), notiz: null, kinder: [], tiefe,
+                        erledigt: m[2] ? m[2].toLowerCase() === "x" : null };
+      while (stapel.length > 1 && stapel[stapel.length - 1].tiefe >= tiefe) stapel.pop();
+      stapel[stapel.length - 1].kinder.push(eintrag);
+      stapel.push(eintrag);
+      letzter = eintrag;
+    } else if (letzter){
+      // tiefer eingerueckt und ohne Strich: Notiz des Punktes darueber
+      const t = zeile.trim();
+      letzter.notiz = letzter.notiz === null ? t : letzter.notiz + "\n" + t;
+    }
+  }
+  return wurzel.kinder;
+}
+
+function markdownEinfuegen(text){
+  const baum = markdownLesen(text);
+  if (!baum.length){ toast("Keine Liste gefunden — erwartet werden Zeilen mit „- "); return; }
+  const ziel = nodes[zoomId] ? zoomId : ROOT;
+  let anzahl = 0;
+
+  begin("Markdown einlesen");
+  touch(ziel);
+  const bau = (eintraege, elternId) => {
+    for (const e of eintraege){
+      const n = makeNode(e.text);
+      if (e.notiz !== null) n.note = e.notiz;
+      if (e.erledigt !== null){
+        n.task = leereAufgabe();
+        n.task.status = e.erledigt ? "erledigt" : "offen";
+      }
+      touch(n.id);                     // vor dem Anlegen, sonst bleibt eine Waise
+      n.parentId = elternId;
+      nodes[n.id] = n;
+      nodes[elternId].children.push(n.id);
+      merkmaleSpiegeln(n);             // @datum, !hoch und %50 aus dem Text uebernehmen
+      anzahl++;
+      if (e.kinder.length){ touch(n.id); bau(e.kinder, n.id); }
+    }
+  };
+  bau(baum, ziel);
+  commit();
+  lastTextTx = null;
+  render(false);
+  toast(anzahl === 1 ? "1 Punkt eingelesen" : anzahl + " Punkte eingelesen");
+}
+
 function importJSON(file){
   const reader = new FileReader();
   reader.onload = () => {
@@ -1779,6 +1891,8 @@ function importJSON(file){
         if (!Array.isArray(n.children)) n.children = [];
         if (!Array.isArray(n.tags)) n.tags = [];
         if (n.task === undefined) n.task = null;
+        if (n.fav === undefined) n.fav = false;
+        if (n.archiviert === undefined) n.archiviert = false;
         aufgabeNormalisieren(n);
       }
       undoStack.length = 0; redoStack.length = 0;
@@ -1795,7 +1909,12 @@ function importJSON(file){
 
 const menuEl = $("#menu-file");
 function closeMenu(){ menuEl.classList.remove("open"); }
-$("#btn-file").addEventListener("click", e => { e.stopPropagation(); menuEl.classList.toggle("open"); });
+$("#btn-file").addEventListener("click", e => {
+  e.stopPropagation();
+  // Zweigeintraege nur im Fokus — an der Wurzel waeren sie mit den oberen gleich
+  menuEl.querySelectorAll(".nur-fokus").forEach(el => { el.hidden = zoomId === ROOT; });
+  menuEl.classList.toggle("open");
+});
 document.addEventListener("click", () => closeMenu());
 menuEl.addEventListener("click", e => {
   const act = e.target.dataset && e.target.dataset.act;
@@ -1803,6 +1922,8 @@ menuEl.addEventListener("click", e => {
   closeMenu();
   if (act === "json") exportJSON();
   if (act === "md") exportMarkdown();
+  if (act === "zweig-json") exportJSON(zoomId);
+  if (act === "zweig-md") exportMarkdown(zoomId);
   if (act === "open") $("#file-input").click();
   if (act === "reset"){
     if (confirm("Der gesamte Inhalt wird gelöscht. Sicherung vorher speichern?\n\nAbbrechen drücken, wenn du erst sichern willst.")){
@@ -1814,7 +1935,14 @@ menuEl.addEventListener("click", e => {
 });
 $("#file-input").addEventListener("change", e => {
   const file = e.target.files && e.target.files[0];
-  if (file) importJSON(file);
+  if (file){
+    // JSON ersetzt den Bestand, Markdown wird am Fokus eingefuegt
+    if (/\.(md|markdown|txt)$/i.test(file.name)){
+      const leser = new FileReader();
+      leser.onload = () => markdownEinfuegen(String(leser.result));
+      leser.readAsText(file);
+    } else importJSON(file);
+  }
   e.target.value = "";
 });
 
@@ -1886,6 +2014,21 @@ function favUmschalten(id){
 }
 
 /* Aufgaben — formgleich zu favUmschalten */
+function archivUmschalten(id){
+  const n = nodes[id];
+  if (!n || id === ROOT) return;
+  begin(n.archiviert ? "Aus dem Archiv holen" : "Archivieren");
+  touch(id);
+  n.archiviert = !n.archiviert;
+  n.modified = Date.now();
+  commit();
+  if (n.archiviert && !query) focusState = { id: null, field: "text", pos: 0 };
+  render(!n.archiviert);
+  toast(n.archiviert
+    ? "Archiviert — mit der Suche !archiv wieder sichtbar"
+    : "Aus dem Archiv geholt");
+}
+
 function aufgabeUmschalten(id){
   const n = nodes[id];
   if (!n) return;
@@ -1971,6 +2114,11 @@ const BEFEHLE = [
   { a: "Sicht", t: "Heute", m: "Offenes, das fällig oder überfällig ist", run: () => setzeSuche("!heute") },
   { a: "Sicht", t: "Offen", m: "Alle offenen Aufgaben", run: () => setzeSuche("!offen") },
   { a: "Sicht", t: "Wichtig", m: "Offenes mit hoher Priorität", run: () => setzeSuche("!wichtig") },
+  { a: "Archiv", t: "Archivieren", m: "Zweig aus allen Ansichten nehmen, ohne ihn zu löschen",
+    run: () => focusState.id ? archivUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
+  { a: "Archiv", t: "Aus dem Archiv holen", m: "Wieder überall zeigen",
+    run: () => focusState.id ? archivUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
+  { a: "Archiv", t: "Archiv zeigen", m: "Alles Archivierte als gefilterte Gliederung", run: () => setzeSuche("!archiv") },
   { a: "Ansicht", t: "Gliederung", m: "Schreiben und umbauen", run: () => setzeAnsicht("gliederung") },
   { a: "Ansicht", t: "Gantt", m: "Zeiträume als Balken, Fristen als Rauten", run: () => setzeAnsicht("gantt") },
   { a: "Ansicht", t: "Mindmap", m: "Derselbe Zweig, radial angeordnet", run: () => setzeAnsicht("mindmap") },

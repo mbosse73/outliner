@@ -39,6 +39,7 @@ Die Suche filtert die Gliederung selbst, statt eine Trefferliste zu zeigen: Tref
 - `!aufgabe`, `!offen`, `!erledigt` grenzen auf Aufgaben ein
 - `!heute` zeigt, was fällig oder überfällig ist, `!überfällig` nur Letzteres
 - `!wichtig` zeigt Offenes mit hoher Priorität, `!hoch` `!mittel` `!niedrig` filtern nach Stufe
+- `!archiv` zeigt das Archiv — sonst bleibt es überall ausgeblendet
 
 Die Sichten „Heute", „Offen" und „Wichtig" in der Befehlspalette sind nichts anderes als diese Suchen — es gibt keine zweite Ansicht, nur einen anderen Filter auf dieselbe Gliederung.
 
@@ -91,9 +92,21 @@ Zwei Ausgabeformate:
 - **JSON** — verlustfrei, für Sicherung und Umzug
 - **Markdown** — eingerückte Liste, für die Weiterverwendung anderswo
 
+Beides geht auch für **einen einzelnen Zweig**: Springen Sie hinein, dann bietet `Datei` zusätzlich „Diesen Zweig sichern" an. Die JSON-Datei ist eine vollwertige Sicherung, die nur diesen Zweig enthält — so geben Sie ein Projekt weiter, ohne den ganzen Bestand mitzuschicken.
+
+**Markdown lässt sich auch einlesen.** Eine eingerückte Liste wird dabei an der Stelle eingefügt, in der Sie gerade stehen — sie ersetzt nichts. Ein `Strg`+`Z` nimmt den ganzen Import wieder zurück. Gelesen werden Einrückung, Notizzeilen und `- [ ]` / `- [x]`; nur die JSON-Öffnung ersetzt den Inhalt.
+
+## Archiv
+
+Was fertig ist, aber nicht gelöscht werden soll, wird über die Befehlspalette **archiviert**. Es verschwindet aus der Gliederung und aus allen Ansichten — Gantt, Kalender und Mindmap eingeschlossen —, bleibt aber gespeichert.
+
+Wiederfinden lässt es sich über die Suche `!archiv` oder den Befehl „Archiv zeigen"; „Aus dem Archiv holen" bringt es zurück, `Strg`+`Z` ebenso. Damit nichts unbemerkt verschwindet, nennt die Zeile unter dem Titel stets, wie viel im Archiv liegt.
+
+In der JSON-Sicherung ist Archiviertes enthalten, in der Markdown-Ausgabe nicht.
+
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt, Kalender und Mindmap. **Kanban und die gesamte Stufe 5 (Wissensnetz) sind zurückgestellt** — ob sie kommen, ist offen. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3, von Stufe 4 die Ansichten Gantt, Kalender und Mindmap, sowie Stufe 6. **Kanban und die gesamte Stufe 5 (Wissensnetz) sind zurückgestellt** — ob sie kommen, ist offen. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
