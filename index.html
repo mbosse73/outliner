@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<!--
+  Outliner — v0.2 (Stufe 2: Suche, Tags, Anheften, Befehlspalette)
+  Eine einzelne Datei. Kein Server, kein Build, keine Abhängigkeiten.
+  Daten liegen im localStorage des Browsers; Sicherung über Datei › Sicherung speichern.
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#f7f5f0">
+<title>Outliner</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  color-scheme:only light;
+  --ff:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Fira Code",Consolas,monospace;
+  --paper:#f7f5f0; --sheet:#fffefb; --raise:#efece4;
+  --rule:#e2ded4;  --rule2:#cbc6ba;
+  --ink:#1a1a18;   --ink2:#54514b;  --ink3:#87837c;
+  --tinte:#2f3a8c; --tinte-s:#e7eaf6;
+  --signal:#a8321f;--signal-s:#fbe9e5;
+  --gut:#2b6b46;   --gut-s:#e3f0e8;
+  --step:22px;
+}
+html,body{background:var(--paper)!important;color:var(--ink)!important;height:100%}
+body{min-height:100dvh}
+input,textarea,button,select{color-scheme:only light;accent-color:var(--tinte)}
+body{font-family:var(--ff);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;border:0;background:transparent;cursor:pointer;color:inherit;text-align:left}
+:focus-visible{outline:2px solid var(--tinte);outline-offset:2px;border-radius:4px}
+::selection{background:var(--tinte-s);color:var(--ink)}
+*{scrollbar-color:var(--rule2) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:7px;
+  border:3px solid var(--paper);background-clip:padding-box}
+
+/* ---------- Kopf ---------- */
+.topbar{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:11px 22px;
+  background:var(--sheet);border-bottom:1px solid var(--rule)}
+.crumbs{flex:1;min-width:0;display:flex;align-items:center;gap:7px;
+  overflow:hidden;white-space:nowrap}
+.crumb{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  font-weight:700;color:var(--ink3);padding:3px 5px;border-radius:5px;
+  max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.crumb:hover{background:var(--raise);color:var(--tinte)}
+.crumb.here{color:var(--ink);cursor:default}
+.crumb.here:hover{background:transparent;color:var(--ink)}
+.crumb-sep{font-family:var(--mono);font-size:10.5px;color:var(--rule2)}
+.tools{flex-shrink:0;display:flex;align-items:center;gap:6px;position:relative}
+.tool{font-size:12.5px;color:var(--ink2);border:1px solid var(--rule2);border-radius:8px;
+  padding:5px 12px;background:var(--paper)}
+.tool:hover{background:var(--raise);color:var(--ink)}
+.menu{position:absolute;top:calc(100% + 9px);right:0;min-width:224px;padding:5px;
+  background:var(--sheet);border:1px solid var(--rule2);border-radius:10px;
+  box-shadow:0 14px 40px rgba(26,26,24,.16);display:none;z-index:30}
+.menu.open{display:block}
+.menu button{display:block;width:100%;font-size:13px;color:var(--ink2);
+  padding:7px 10px;border-radius:7px}
+.menu button:hover{background:var(--paper);color:var(--ink)}
+.menu hr{border:0;border-top:1px solid var(--rule);margin:5px 6px}
+
+/* ---------- Blatt ---------- */
+.sheet{flex:1;min-height:0;overflow-y:auto;background:var(--paper);padding:0 26px 45vh}
+.doc{max-width:860px;margin:0 auto;width:100%;padding-top:34px}
+.title{font-family:var(--serif);font-size:clamp(23px,3vw,31px);line-height:1.12;
+  letter-spacing:-.02em;font-weight:400;padding:0 2px 2px}
+.title:focus{outline:none}
+.title.empty::before{content:"Ohne Titel";color:var(--ink3)}
+.subtitle{display:flex;align-items:center;gap:13px;padding:14px 0 12px}
+.subtitle b{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:700;color:var(--ink3)}
+.subtitle i{flex:1;height:1px;background:var(--rule);font-style:normal}
+#rows{position:relative}
+
+/* ---------- Zeile ---------- */
+.row{position:relative;display:flex;align-items:flex-start;
+  padding:3px 8px 3px 2px;border-radius:8px;
+  padding-left:calc(var(--depth) * var(--step) + 2px)}
+.row:hover{background:var(--sheet)}
+.row.has-focus{background:var(--sheet)}
+.guides{position:absolute;top:0;bottom:0;left:0;pointer-events:none}
+.guide{position:absolute;top:0;bottom:0;width:1px;background:var(--rule);
+  transition:background-color .16s,opacity .16s}
+.guide.lit{background:var(--tinte);opacity:.4}
+
+.fold{flex-shrink:0;width:16px;height:25px;display:grid;place-items:center;
+  color:var(--rule2);opacity:0;transition:opacity .12s}
+.row:hover .fold,.row.has-focus .fold{opacity:1}
+.row.folded .fold{opacity:1;color:var(--ink3)}
+.fold:hover{color:var(--tinte)}
+.fold.leaf{visibility:hidden}
+.fold svg{width:9px;height:9px;transform:rotate(90deg);transition:transform .14s}
+.row.folded .fold svg{transform:rotate(0deg)}
+
+.bullet{flex-shrink:0;width:17px;height:25px;display:grid;place-items:center;margin-right:5px}
+.bullet i{display:block;width:5px;height:5px;border-radius:50%;background:var(--rule2);
+  transition:background-color .16s,box-shadow .16s}
+.bullet:hover i{background:var(--tinte)}
+.row.folded .bullet i{background:var(--ink3);box-shadow:0 0 0 4px var(--tinte-s)}
+.row.has-focus .bullet i{background:var(--tinte)}
+
+.body{flex:1;min-width:0;padding-top:1px}
+.text{outline:none;white-space:pre-wrap;overflow-wrap:anywhere;
+  font-size:14px;line-height:1.45;letter-spacing:-.006em;
+  padding:2px 2px;min-height:23px}
+.note{outline:none;white-space:pre-wrap;overflow-wrap:anywhere;
+  font-size:12px;line-height:1.45;color:var(--ink3);
+  border-left:2px solid var(--rule);padding:1px 2px 2px 9px;margin-top:2px}
+.note.hidden{display:none}
+.note:empty::before{content:"Notiz";color:var(--rule2)}
+
+/* ---------- leer ---------- */
+.blank{padding:18px 2px;font-size:13px;color:var(--ink3);line-height:1.6}
+.blank button{font-size:12.5px;font-weight:600;background:var(--tinte-s);color:var(--tinte);
+  border:1px solid var(--tinte);padding:6px 13px;border-radius:8px;margin-left:6px}
+.blank button:hover{background:#d9dff1}
+
+/* ---------- Fuß ---------- */
+.statusbar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:8px 24px;background:var(--sheet);border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink3)}
+.statusbar kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);
+  border:1px solid var(--rule);border-radius:4px;padding:1px 5px;color:var(--ink2);
+  letter-spacing:0}
+.hints{display:flex;gap:15px}
+
+.toast{position:fixed;bottom:44px;left:50%;transform:translateX(-50%) translateY(70px);
+  background:var(--sheet);color:var(--ink);border:1px solid var(--rule2);font-size:13.5px;
+  padding:11px 20px;border-radius:10px;opacity:0;pointer-events:none;z-index:9500;
+  box-shadow:0 14px 40px rgba(26,26,24,.16);
+  transition:transform .24s cubic-bezier(.2,.8,.3,1),opacity .24s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+@media(max-width:640px){
+  :root{--step:16px}
+  .topbar{padding:9px 14px}
+  .sheet{padding:0 14px 45vh}
+  .hints{display:none}
+}
+
+/* ---------- Stufe 2: Suche, Tags, Palette ---------- */
+.suche{flex:0 1 250px;display:flex;align-items:center;gap:8px;
+  border-bottom:1.5px solid var(--rule2);padding:2px 2px 4px;transition:border-color .16s}
+.suche:focus-within{border-color:var(--tinte)}
+.suche .lupe{font-family:var(--mono);font-size:13px;color:var(--rule2);line-height:1}
+.suche:focus-within .lupe{color:var(--tinte)}
+.suche input{flex:1;min-width:0;border:0;outline:0;background:transparent;
+  font-family:var(--ff);font-size:13px;color:var(--ink)}
+.suche input::placeholder{color:var(--ink3)}
+.suche .x{font-family:var(--mono);font-size:13px;color:var(--ink3);padding:0 3px;line-height:1}
+.suche .x:hover{color:var(--signal)}
+.suche .x[hidden]{display:none}
+
+.tag{color:var(--tinte);background:var(--tinte-s);border-radius:4px;
+  padding:0 4px;cursor:pointer;font-weight:600}
+.tag:hover{background:#d9dff1}
+mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
+.row.fav .bullet i{background:var(--tinte);box-shadow:0 0 0 3px var(--tinte-s)}
+.row.treffer{background:var(--sheet)}
+
+.palette{position:fixed;inset:0;z-index:9000;background:rgba(26,26,24,.18);
+  display:flex;justify-content:center;align-items:flex-start;padding:10vh 18px 18px}
+.palette[hidden]{display:none}
+.pbox{width:100%;max-width:620px;max-height:78vh;display:flex;flex-direction:column;
+  background:var(--sheet);border:1px solid var(--rule2);border-radius:14px;
+  box-shadow:0 24px 60px rgba(26,26,24,.22);padding:17px 19px 10px}
+.feld{display:flex;align-items:center;gap:13px;border-bottom:2px solid var(--rule2);
+  padding-bottom:11px;transition:border-color .16s}
+.feld:focus-within{border-color:var(--tinte)}
+.feld .c{font-size:22px;color:var(--rule2);line-height:1}
+.feld:focus-within .c{color:var(--tinte)}
+.feld input{flex:1;min-width:0;border:0;outline:0;background:transparent;
+  font-family:var(--ff);font-size:22px;font-weight:450;letter-spacing:-.022em;color:var(--ink)}
+.feld input::placeholder{color:var(--ink3)}
+.feld .k{font-family:var(--mono);font-size:10.5px;color:var(--ink3);flex-shrink:0;
+  border:1px solid var(--rule);border-radius:5px;padding:3px 7px;background:var(--paper)}
+.pliste{overflow-y:auto;margin-top:6px;padding-bottom:6px}
+.pgrp{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:700;color:var(--ink3);padding:13px 11px 5px}
+.tr{display:flex;align-items:center;gap:13px;padding:9px 11px;border-radius:9px;
+  border-left:2px solid transparent;width:100%}
+.tr:hover,.tr.wahl{background:var(--paper);border-left-color:var(--tinte)}
+.tr-a{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  font-weight:700;color:var(--ink3);flex-shrink:0;min-width:70px}
+.tr.wahl .tr-a{color:var(--tinte)}
+.tr-b{flex:1;min-width:0}
+.tr-t{display:block;font-size:14px;letter-spacing:-.008em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-m{display:block;font-size:11.5px;color:var(--ink3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pleer{padding:20px 11px;font-size:13px;color:var(--ink3);line-height:1.6}
+@media(max-width:640px){
+  .suche{flex:1 1 auto}
+  .crumbs{display:none}
+  .palette{padding:6vh 12px 12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- Geraet im Dunkelmodus: Oberflaeche bleibt hell ---------- */
+@media (prefers-color-scheme:dark){
+  :root{color-scheme:only light}
+  html,body{background:var(--paper)!important}
+  .sheet,#rows,.doc,.blank{background:var(--paper)!important}
+  .topbar,.statusbar,.menu,.toast{background:var(--sheet)!important}
+  .row:hover,.row.has-focus{background:var(--sheet)!important}
+  .tool{background:var(--paper)!important}
+  .pbox,.palette-box{background:var(--sheet)!important}
+  .tr:hover,.tr.wahl,.feld .k{background:var(--paper)!important}
+  .tag{background:var(--tinte-s)!important}
+  mark{background:#f6e7a8!important}
+  .tool:hover,.statusbar kbd{background:var(--raise)!important}
+  .menu button:hover{background:var(--paper)!important}
+  .blank button{background:var(--tinte-s)!important}
+  .title,.text,.note,.crumb,.subtitle b,.statusbar,.menu button,.tool{
+    -webkit-text-fill-color:currentColor}
+  .title,.text{background:transparent!important}
+}
+.text,.note,.title{caret-color:var(--tinte);background:transparent}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="crumbs" id="crumbs" aria-label="Fokuspfad"></nav>
+  <div class="suche">
+    <span class="lupe" aria-hidden="true">/</span>
+    <input id="suche" type="text" autocomplete="off" spellcheck="false"
+           placeholder="Gliederung durchsuchen" aria-label="Gliederung durchsuchen">
+    <button class="x" id="suche-x" hidden title="Suche zurücksetzen">×</button>
+  </div>
+  <div class="tools">
+    <button class="tool" id="btn-collapse">Einklappen</button>
+    <button class="tool" id="btn-file" aria-haspopup="true">Datei</button>
+    <div class="menu" id="menu-file">
+      <button data-act="json">Sicherung speichern (.json)</button>
+      <button data-act="md">Als Markdown speichern (.md)</button>
+      <hr>
+      <button data-act="open">Sicherung öffnen …</button>
+      <hr>
+      <button data-act="reset">Alles verwerfen</button>
+    </div>
+    <input type="file" id="file-input" accept=".json,application/json" hidden>
+  </div>
+</header>
+
+<div class="sheet" id="sheet">
+  <div class="doc">
+    <h1 class="title" id="title" contenteditable="plaintext-only" spellcheck="false"></h1>
+    <div class="subtitle"><b id="subtitle"></b><i></i></div>
+    <div id="rows"></div>
+    <div class="blank" id="blank" hidden>Noch nichts hier. <button id="blank-add">Ersten Punkt schreiben</button></div>
+  </div>
+</div>
+
+<footer class="statusbar">
+  <div id="status">—</div>
+  <div class="hints">
+    <span><kbd>Tab</kbd> einrücken</span>
+    <span><kbd>Alt</kbd>+<kbd>↑↓</kbd> verschieben</span>
+    <span><kbd>Strg</kbd>+<kbd>.</kbd> falten</span>
+    <span><kbd>Umschalt</kbd>+<kbd>Enter</kbd> Notiz</span>
+    <span><kbd>Strg</kbd>+<kbd>K</kbd> Palette</span>
+  </div>
+</footer>
+
+<div class="palette" id="palette" hidden>
+  <div class="pbox">
+    <div class="feld">
+      <span class="c" aria-hidden="true">›</span>
+      <input id="pal-eingabe" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Springen oder Befehl" aria-label="Springen oder Befehl">
+      <span class="k">Esc</span>
+    </div>
+    <div class="pliste" id="pal-liste"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   1 — Datenmodell
+   Flache Map aller Nodes. Der Baum ergibt sich aus children/parentId.
+   Jede Ansicht (später Kanban, Kalender, Gantt) liest dieselbe Map.
+   ========================================================================= */
+
+const STORE_KEY = "outliner.v1";
+const ROOT = "root";
+
+let nodes = Object.create(null);
+let zoomId = ROOT;
+let query = "";      // aktuelle Suche
+let filter = null;   // {hit, keep, q} solange gesucht wird
+
+function uid(){
+  return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function makeNode(text){
+  const now = Date.now();
+  return {
+    id: uid(), parentId: null, children: [],
+    text: text || "", note: null, collapsed: false, fav: false,
+    // ab Stufe 3 belegt, jetzt schon im Modell reserviert:
+    tags: [], task: null,
+    created: now, modified: now
+  };
+}
+
+function clone(o){ return o == null ? null : JSON.parse(JSON.stringify(o)); }
+function node(id){ return nodes[id]; }
+function parentOf(id){ const n = nodes[id]; return n && n.parentId ? nodes[n.parentId] : null; }
+function indexIn(parent, id){ return parent.children.indexOf(id); }
+
+function seed(){
+  nodes = Object.create(null);
+  const root = makeNode("Outliner");
+  root.id = ROOT;
+  nodes[ROOT] = root;
+
+  const add = (parentId, text, note) => {
+    const n = makeNode(text);
+    if (note) n.note = note;
+    n.parentId = parentId;
+    nodes[n.id] = n;
+    nodes[parentId].children.push(n.id);
+    return n.id;
+  };
+
+  const a = add(ROOT, "So arbeitest du hier");
+  add(a, "Enter schreibt den nächsten Punkt, Tab rückt ihn ein.");
+  add(a, "Alt + Pfeil oben/unten verschiebt einen Punkt samt allem darunter.");
+  add(a, "Strg + Punkt klappt einen Zweig zu. Der Aufzählungspunkt bekommt dann einen Ring.");
+  add(a, "Umschalt + Enter öffnet eine Notizzeile.", "Genau so eine. Sie gehört zum Punkt darüber und bleibt beim Verschieben dabei.");
+  add(a, "Klick auf einen Aufzählungspunkt springt hinein — der Pfad oben führt wieder heraus.");
+
+  const b = add(ROOT, "Ein Punkt kann alles sein");
+  add(b, "Notiz, Aufgabe, Projekt, Idee, Termin");
+  add(b, "Aus derselben Struktur entstehen später Kanban, Kalender, Gantt und Mindmap.");
+
+  const b2 = add(ROOT, "Wiederfinden #anleitung");
+  nodes[b2].fav = true;
+  add(b2, "Oben rechts suchen: die Gliederung selbst wird gefiltert, der Weg zum Treffer bleibt stehen.");
+  add(b2, "Wörter mit #davor sind Tags. Ein Klick darauf sucht danach.", "Mehrere Wörter grenzen weiter ein, #tag und Text lassen sich mischen.");
+  add(b2, "Strg + Umschalt + F heftet einen Punkt an. Angeheftetes steht in der Palette ganz oben.");
+  add(b2, "Strg + K öffnet die Palette: springen, suchen, Befehle. Strg + F springt ins Suchfeld.");
+
+  const c = add(ROOT, "Womit fängst du an?");
+  add(c, "");
+  zoomId = ROOT;
+}
+
+/* =========================================================================
+   2 — Änderungen und Undo
+   Jede Änderung läuft in einer Transaktion. Gespeichert wird nur der
+   Zustand der berührten Nodes vorher/nachher — Command-Stack auf dem
+   Datenmodell, nicht auf dem DOM.
+   ========================================================================= */
+
+let tx = null;
+const undoStack = [];
+const redoStack = [];
+let lastTextTx = null;
+
+function begin(label){
+  if (tx) return;
+  tx = { label, before: Object.create(null), zoomBefore: zoomId };
+}
+function touch(id){
+  if (!tx) return;
+  if (!(id in tx.before)) tx.before[id] = clone(nodes[id] || null);
+}
+function commit(){
+  if (!tx) return;
+  const after = Object.create(null);
+  let changed = false;
+  for (const id in tx.before){
+    after[id] = clone(nodes[id] || null);
+    if (JSON.stringify(after[id]) !== JSON.stringify(tx.before[id])) changed = true;
+  }
+  if (!changed){ tx = null; return; }
+  const entry = { label: tx.label, before: tx.before, after, zoomBefore: tx.zoomBefore, zoomAfter: zoomId };
+  undoStack.push(entry);
+  if (undoStack.length > 400) undoStack.shift();
+  redoStack.length = 0;
+  tx = null;
+  scheduleSave();
+  return entry;
+}
+
+function applySnap(snap){
+  for (const id in snap){
+    if (snap[id] === null) delete nodes[id];
+    else nodes[id] = clone(snap[id]);
+  }
+}
+
+function undo(){
+  const e = undoStack.pop();
+  if (!e) return;
+  redoStack.push(e);
+  applySnap(e.before);
+  zoomId = nodes[e.zoomBefore] ? e.zoomBefore : ROOT;
+  lastTextTx = null;
+  scheduleSave();
+  render(true);
+  toast("Rückgängig: " + e.label);
+}
+function redo(){
+  const e = redoStack.pop();
+  if (!e) return;
+  undoStack.push(e);
+  applySnap(e.after);
+  zoomId = nodes[e.zoomAfter] ? e.zoomAfter : ROOT;
+  lastTextTx = null;
+  scheduleSave();
+  render(true);
+  toast("Wiederhergestellt: " + e.label);
+}
+
+/* --- Textänderungen zusammenfassen, damit Undo nicht Buchstabe für Buchstabe läuft --- */
+function recordText(id){
+  const now = Date.now();
+  if (lastTextTx && lastTextTx.id === id && now - lastTextTx.time < 900){
+    lastTextTx.entry.after[id] = clone(nodes[id]);
+    lastTextTx.time = now;
+    scheduleSave();
+    return;
+  }
+  const entry = commit();
+  if (entry) lastTextTx = { id, entry, time: now };
+  else lastTextTx = null;
+}
+
+/* =========================================================================
+   3 — Strukturbefehle
+   ========================================================================= */
+
+function insertAfter(refId, newNode){
+  const parent = parentOf(refId) || nodes[zoomId];
+  touch(parent.id);
+  newNode.parentId = parent.id;
+  nodes[newNode.id] = newNode;
+  const i = indexIn(parent, refId);
+  parent.children.splice(i + 1, 0, newNode.id);
+}
+function insertFirstChild(parentId, newNode){
+  touch(parentId);
+  newNode.parentId = parentId;
+  nodes[newNode.id] = newNode;
+  nodes[parentId].children.unshift(newNode.id);
+}
+function detach(id){
+  const p = parentOf(id);
+  if (!p) return;
+  touch(p.id);
+  const i = indexIn(p, id);
+  if (i >= 0) p.children.splice(i, 1);
+}
+function removeSubtree(id){
+  const n = nodes[id];
+  if (!n) return;
+  for (const c of n.children.slice()) removeSubtree(c);
+  touch(id);
+  delete nodes[id];
+}
+
+function indent(id){
+  const p = parentOf(id);
+  if (!p) return false;
+  const i = indexIn(p, id);
+  if (i <= 0) return false;
+  const newParentId = p.children[i - 1];
+  begin("Einrücken");
+  touch(p.id); touch(newParentId); touch(id);
+  p.children.splice(i, 1);
+  const np = nodes[newParentId];
+  np.collapsed = false;
+  np.children.push(id);
+  nodes[id].parentId = newParentId;
+  commit();
+  return true;
+}
+
+function outdent(id){
+  const p = parentOf(id);
+  if (!p || p.id === zoomId) return false;
+  const gp = parentOf(p.id);
+  if (!gp) return false;
+  begin("Ausrücken");
+  touch(p.id); touch(gp.id); touch(id);
+  const i = indexIn(p, id);
+  // Nachfolgende Geschwister wandern unter den ausgerückten Punkt
+  const trailing = p.children.slice(i + 1);
+  p.children.splice(i);
+  const me = nodes[id];
+  for (const t of trailing){
+    touch(t);
+    nodes[t].parentId = id;
+    me.children.push(t);
+  }
+  const gi = indexIn(gp, p.id);
+  gp.children.splice(gi + 1, 0, id);
+  me.parentId = gp.id;
+  commit();
+  return true;
+}
+
+function moveVertical(id, dir){
+  const p = parentOf(id);
+  if (!p) return false;
+  const i = indexIn(p, id);
+  const j = i + dir;
+  if (j < 0 || j >= p.children.length) return false;
+  begin("Verschieben");
+  touch(p.id);
+  p.children.splice(i, 1);
+  p.children.splice(j, 0, id);
+  commit();
+  return true;
+}
+
+function toggleFold(id, force){
+  const n = nodes[id];
+  if (!n || !n.children.length) return;
+  begin("Falten");
+  touch(id);
+  n.collapsed = (force === undefined) ? !n.collapsed : force;
+  commit();
+}
+
+/* =========================================================================
+   4 — Suche, Tags, Filter
+   Gesucht wird global. Angezeigt wird die Gliederung selbst, gefiltert:
+   Treffer bleiben stehen, ihre Vorfahren bleiben als Weg sichtbar.
+   ========================================================================= */
+
+const TAG_RE = /#[0-9A-Za-zÄÖÜäöüß_\-\/]+/g;
+
+function tagsOf(n){
+  const out = [];
+  const scan = s => { if (!s) return; let m; TAG_RE.lastIndex = 0;
+    while ((m = TAG_RE.exec(s))) out.push(m[0].slice(1)); };
+  scan(n.text); scan(n.note);
+  return out;
+}
+function alleTags(){
+  const zaehler = new Map();
+  for (const id in nodes){
+    if (id === ROOT) continue;
+    for (const t of tagsOf(nodes[id])) zaehler.set(t, (zaehler.get(t) || 0) + 1);
+  }
+  return Array.from(zaehler.entries()).sort((a, b) => b[1] - a[1]);
+}
+function parseQuery(q){
+  const terms = [], tags = [];
+  let favOnly = false;
+  q.trim().split(/\s+/).filter(Boolean).forEach(t => {
+    if (t === "!fav" || t === "!angeheftet") favOnly = true;
+    else if (t.length > 1 && t[0] === "#") tags.push(t.slice(1).toLowerCase());
+    else terms.push(t.toLowerCase());
+  });
+  return { terms, tags, favOnly };
+}
+function trifft(n, q){
+  if (q.favOnly && !n.fav) return false;
+  const heu = (n.text + " " + (n.note || "")).toLowerCase();
+  if (!q.terms.every(t => heu.includes(t))) return false;
+  if (q.tags.length){
+    const eigene = tagsOf(n).map(t => t.toLowerCase());
+    if (!q.tags.every(t => eigene.some(e => e === t || e.startsWith(t)))) return false;
+  }
+  return true;
+}
+function baueFilter(){
+  if (!query.trim()) return null;
+  const q = parseQuery(query);
+  const hit = new Set(), keep = new Set();
+  const walk = (id, kette) => {
+    for (const cid of nodes[id].children){
+      const c = nodes[cid];
+      if (!c) continue;
+      if (trifft(c, q)){ hit.add(cid); keep.add(cid); kette.forEach(a => keep.add(a)); }
+      walk(cid, kette.concat(cid));
+    }
+  };
+  walk(zoomId, []);
+  return { hit, keep, q };
+}
+
+function visibleRows(){
+  const out = [];
+  const walk = (id, depth, ancestors) => {
+    const n = nodes[id];
+    if (!n) return;
+    for (const cid of n.children){
+      const c = nodes[cid];
+      if (!c) continue;
+      if (filter){
+        if (!filter.keep.has(cid)) continue;          // ohne Treffer im Zweig: weg
+        out.push({ id: cid, depth, ancestors });
+        walk(cid, depth + 1, ancestors.concat(cid));  // beim Filtern zählt kein Zuklappen
+      } else {
+        out.push({ id: cid, depth, ancestors });
+        if (!c.collapsed && c.children.length) walk(cid, depth + 1, ancestors.concat(cid));
+      }
+    }
+  };
+  walk(zoomId, 0, []);
+  return out;
+}
+let rowIndex = [];              // aktuelle sichtbare Zeilen
+function rowMeta(id){ return rowIndex.find(r => r.id === id); }
+function rowPos(id){ return rowIndex.findIndex(r => r.id === id); }
+
+/* =========================================================================
+   5 — Rendern (nur was sich geändert hat)
+   ========================================================================= */
+
+const rowEls = new Map();
+const $ = s => document.querySelector(s);
+const rowsEl = $("#rows");
+const titleEl = $("#title");
+
+let focusState = { id: null, field: "text", pos: 0 };
+let titelZeigt = null;   // welcher Punkt gerade als Titel steht
+
+const CARET_SVG = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1 L8 5 L2 9 Z" fill="currentColor"/></svg>';
+
+function buildRow(id){
+  const el = document.createElement("div");
+  el.className = "row";
+  el.dataset.id = id;
+
+  const guides = document.createElement("div");
+  guides.className = "guides";
+
+  const fold = document.createElement("button");
+  fold.className = "fold";
+  fold.innerHTML = CARET_SVG;
+  fold.tabIndex = -1;
+  fold.title = "Zweig ein- oder ausklappen";
+  fold.addEventListener("mousedown", e => e.preventDefault());
+  fold.addEventListener("click", () => { toggleFold(id); render(false); });
+
+  const bullet = document.createElement("button");
+  bullet.className = "bullet";
+  bullet.innerHTML = "<i></i>";
+  bullet.tabIndex = -1;
+  bullet.title = "Hineinspringen";
+  bullet.addEventListener("mousedown", e => e.preventDefault());
+  bullet.addEventListener("click", () => zoomTo(id));
+
+  const body = document.createElement("div");
+  body.className = "body";
+
+  const text = document.createElement("div");
+  text.className = "text";
+  text.contentEditable = "plaintext-only";
+  text.spellcheck = false;
+  text.dataset.field = "text";
+
+  const note = document.createElement("div");
+  note.className = "note hidden";
+  note.contentEditable = "plaintext-only";
+  note.spellcheck = false;
+  note.dataset.field = "note";
+
+  body.append(text, note);
+  el.append(guides, fold, bullet, body);
+  return el;
+}
+
+function updateRow(el, meta, litPath){
+  const n = nodes[meta.id];
+  el.style.setProperty("--depth", meta.depth);
+  el.classList.toggle("folded", !!n.collapsed && n.children.length > 0);
+  el.classList.toggle("has-focus", focusState.id === meta.id);
+
+  // Führungslinien: die Linie eines Vorfahren leuchtet, wenn der Cursor darunter steht
+  const guides = el.firstChild;
+  while (guides.childNodes.length > meta.depth) guides.lastChild.remove();
+  while (guides.childNodes.length < meta.depth){
+    const g = document.createElement("span");
+    g.className = "guide";
+    guides.appendChild(g);
+  }
+  meta.ancestors.forEach((aid, i) => {
+    const g = guides.childNodes[i];
+    g.style.left = "calc(var(--step) * " + i + " + 9px)";
+    g.classList.toggle("lit", litPath.has(aid));
+  });
+
+  const fold = el.querySelector(".fold");
+  fold.classList.toggle("leaf", n.children.length === 0);
+
+  el.classList.toggle("fav", !!n.fav);
+  el.classList.toggle("treffer", !!(filter && filter.hit.has(meta.id)));
+
+  const text = el.querySelector(".text");
+  male(text, n.text);
+
+  const note = el.querySelector(".note");
+  const hasNote = n.note !== null && n.note !== undefined;
+  note.classList.toggle("hidden", !hasNote);
+  if (hasNote) male(note, n.note);
+}
+
+/* Beim Tippen steht reiner Text im Feld, sonst die ausgezeichnete Fassung.
+   So bleibt der Cursor unberührt und Tags bzw. Treffer sind trotzdem sichtbar. */
+function escHtml(s){
+  return s.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+}
+function male(el, value){
+  if (document.activeElement === el){
+    if (el.textContent !== value) el.textContent = value;
+    el.dataset.stand = "";
+    return;
+  }
+  const stand = value + "\u0000" + query;
+  if (el.dataset.stand === stand) return;
+  el.innerHTML = schmuecke(value);
+  el.dataset.stand = stand;
+}
+function schmuecke(text){
+  const terms = filter ? filter.q.terms.filter(Boolean) : [];
+  const teile = [];
+  let last = 0, m;
+  TAG_RE.lastIndex = 0;
+  while ((m = TAG_RE.exec(text))){
+    teile.push({ t: text.slice(last, m.index), tag: false });
+    teile.push({ t: m[0], tag: true });
+    last = m.index + m[0].length;
+  }
+  teile.push({ t: text.slice(last), tag: false });
+  return teile.map(p => {
+    let s = escHtml(p.t);
+    for (const term of terms){
+      const re = new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+      s = s.replace(re, "\u0001$1\u0002");
+    }
+    s = s.replace(/\u0001/g, "<mark>").replace(/\u0002/g, "</mark>");
+    return p.tag ? '<span class="tag">' + s + "</span>" : s;
+  }).join("");
+}
+
+function render(restoreFocus){
+  filter = baueFilter();
+  const sf = $("#suche");
+  if (document.activeElement !== sf) sf.value = query;
+  $("#suche-x").hidden = !query;
+  rowIndex = visibleRows();
+
+  // Pfad vom Fokus nach oben — Grundlage der leuchtenden Führungslinien
+  const litPath = new Set();
+  const fm = focusState.id ? rowMeta(focusState.id) : null;
+  if (fm){ fm.ancestors.forEach(a => litPath.add(a)); litPath.add(fm.id); }
+
+  const seen = new Set();
+  let prev = null;
+  for (const meta of rowIndex){
+    let el = rowEls.get(meta.id);
+    if (!el){ el = buildRow(meta.id); rowEls.set(meta.id, el); }
+    updateRow(el, meta, litPath);
+    const expected = prev ? prev.nextSibling : rowsEl.firstChild;
+    if (el !== expected) rowsEl.insertBefore(el, expected);
+    prev = el;
+    seen.add(meta.id);
+  }
+  for (const [id, el] of Array.from(rowEls)){
+    if (!seen.has(id)){ el.remove(); rowEls.delete(id); }
+  }
+
+  const zoomNode = nodes[zoomId];
+  if (titelZeigt !== zoomId || document.activeElement !== titleEl){
+    titleEl.textContent = zoomNode.text;
+    titelZeigt = zoomId;
+  }
+  titleEl.classList.toggle("empty", !zoomNode.text.trim());
+  renderCrumbs();
+  renderSubtitle();
+
+  $("#blank").hidden = rowIndex.length > 0;
+  $("#status").textContent = statusText();
+
+  if (restoreFocus) applyFocus();
+}
+
+function renderSubtitle(){
+  const el = $("#subtitle");
+  if (filter){
+    const n = filter.hit.size;
+    el.textContent = n === 0 ? "Kein Treffer" : n + (n === 1 ? " Treffer" : " Treffer");
+    return;
+  }
+  const total = Object.keys(nodes).length - 1;
+  if (zoomId === ROOT){
+    el.textContent = total === 0 ? "Leer" : total + (total === 1 ? " Punkt" : " Punkte");
+  } else {
+    const sub = countSubtree(zoomId) - 1;
+    el.textContent = "Fokus · " + sub + (sub === 1 ? " Punkt" : " Punkte");
+  }
+}
+function countSubtree(id){
+  const n = nodes[id];
+  if (!n) return 0;
+  return 1 + n.children.reduce((s, c) => s + countSubtree(c), 0);
+}
+
+function renderCrumbs(){
+  const el = $("#crumbs");
+  el.textContent = "";
+  const path = [];
+  let cur = zoomId;
+  while (cur){ path.unshift(cur); cur = nodes[cur].parentId; }
+  path.forEach((id, i) => {
+    if (i > 0){
+      const sep = document.createElement("span");
+      sep.className = "crumb-sep";
+      sep.textContent = "›";
+      el.appendChild(sep);
+    }
+    const b = document.createElement("button");
+    b.className = "crumb" + (i === path.length - 1 ? " here" : "");
+    const t = nodes[id].text.trim();
+    b.textContent = id === ROOT ? (t || "Outliner") : (t || "Ohne Titel");
+    if (i !== path.length - 1) b.addEventListener("click", () => zoomTo(id));
+    el.appendChild(b);
+  });
+}
+
+function statusText(){
+  const t = savedAt ? new Intl.DateTimeFormat("de-DE", { hour:"2-digit", minute:"2-digit" }).format(savedAt) : null;
+  return rowIndex.length + " sichtbar · " + (t ? "gesichert " + t : "noch nicht gesichert");
+}
+
+/* =========================================================================
+   6 — Cursor
+   ========================================================================= */
+
+function fieldEl(id, field){
+  const row = rowEls.get(id);
+  if (!row) return null;
+  return row.querySelector(field === "note" ? ".note" : ".text");
+}
+function getCaret(el){
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !el.contains(sel.anchorNode)) return 0;
+  const r = sel.getRangeAt(0);
+  const pre = r.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(r.endContainer, r.endOffset);
+  return pre.toString().length;
+}
+function setCaret(el, pos){
+  el.focus();
+  const sel = window.getSelection();
+  const r = document.createRange();
+  let left = pos, target = null, offset = 0;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let tn;
+  while ((tn = walker.nextNode())){
+    if (left <= tn.length){ target = tn; offset = left; break; }
+    left -= tn.length;
+  }
+  if (target){ r.setStart(target, offset); }
+  else { r.selectNodeContents(el); r.collapse(false); }
+  r.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+function focusNode(id, field, pos){
+  focusState = { id, field: field || "text", pos: pos === undefined ? 0 : pos };
+  applyFocus();
+}
+function applyFocus(){
+  if (!focusState.id) return;
+  const el = fieldEl(focusState.id, focusState.field);
+  if (!el) return;
+  const len = el.textContent.length;
+  setCaret(el, focusState.pos === Infinity ? len : Math.min(focusState.pos, len));
+  scrollIntoViewSoft(el);
+}
+function scrollIntoViewSoft(el){
+  const sheet = $("#sheet");
+  const r = el.getBoundingClientRect();
+  const s = sheet.getBoundingClientRect();
+  if (r.top < s.top + 60) sheet.scrollTop -= (s.top + 60 - r.top);
+  else if (r.bottom > s.bottom - 60) sheet.scrollTop += (r.bottom - (s.bottom - 60));
+}
+
+/* =========================================================================
+   7 — Fokusmodus
+   ========================================================================= */
+
+function zoomTo(id){
+  if (!nodes[id]) return;
+  zoomId = id;
+  const first = nodes[id].children[0];
+  focusState = { id: first || null, field: "text", pos: 0 };
+  render(!!first);
+  if (!first) titleEl.focus();
+  $("#sheet").scrollTop = 0;
+}
+function zoomOut(){
+  const p = nodes[zoomId].parentId;
+  if (!p) return;
+  const was = zoomId;
+  zoomId = p;
+  focusState = { id: was, field: "text", pos: Infinity };
+  render(true);
+}
+
+/* =========================================================================
+   8 — Tastatur
+   ========================================================================= */
+
+function currentField(){
+  const a = document.activeElement;
+  if (!a || !a.dataset || !a.dataset.field) return null;
+  const row = a.closest(".row");
+  if (!row) return null;
+  return { id: row.dataset.id, field: a.dataset.field, el: a, pos: getCaret(a) };
+}
+
+document.addEventListener("keydown", e => {
+  const mod = e.ctrlKey || e.metaKey;
+
+  if (mod && e.key.toLowerCase() === "k"){
+    e.preventDefault();
+    palOffen ? palSchliessen() : palOeffnen("");
+    return;
+  }
+  if (palOffen) return;
+
+  if (mod && e.shiftKey && e.key.toLowerCase() === "f"){
+    e.preventDefault();
+    const cf = currentField();
+    if (cf) favUmschalten(cf.id);
+    return;
+  }
+  if (mod && !e.shiftKey && e.key.toLowerCase() === "f"){
+    e.preventDefault();
+    sucheEl.focus();
+    sucheEl.select();
+    return;
+  }
+
+  // Eingaben im Suchfeld gehen nicht an die Gliederung
+  if (e.target === sucheEl){
+    if (e.key === "Escape"){
+      e.preventDefault();
+      setzeSuche("");
+      const r = rowIndex[0];
+      if (r) focusNode(r.id, "text", 0);
+    } else if (e.key === "Enter" || e.key === "ArrowDown"){
+      e.preventDefault();
+      const r = rowIndex.find(x => filter && filter.hit.has(x.id)) || rowIndex[0];
+      if (r) focusNode(r.id, "text", e.key === "Enter" ? Infinity : 0);
+    }
+    return;
+  }
+
+  if (mod && e.key.toLowerCase() === "z"){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && e.key.toLowerCase() === "y"){ e.preventDefault(); redo(); return; }
+  if (mod && e.key.toLowerCase() === "s"){ e.preventDefault(); exportJSON(); return; }
+
+  if (e.key === "Escape"){
+    if ($("#menu-file").classList.contains("open")){ closeMenu(); return; }
+    if (query){ setzeSuche(""); applyFocus(); return; }
+    const f = currentField();
+    if (f && f.field === "note"){ focusNode(f.id, "text", Infinity); return; }
+    zoomOut();
+    return;
+  }
+
+  if (document.activeElement === titleEl){
+    if (e.key === "Enter"){
+      e.preventDefault();
+      const first = nodes[zoomId].children[0];
+      if (first) focusNode(first, "text", 0);
+      else newFirstChild();
+    }
+    return;
+  }
+
+  const f = currentField();
+  if (!f) return;
+  const n = nodes[f.id];
+  if (!n) return;
+
+  /* --- Falten --- */
+  if (mod && (e.key === "." || e.code === "Period")){
+    e.preventDefault();
+    toggleFold(f.id);
+    render(true);
+    return;
+  }
+
+  /* --- Fokusmodus --- */
+  if (e.altKey && e.shiftKey && e.key === "ArrowRight"){ e.preventDefault(); zoomTo(f.id); return; }
+  if (e.altKey && e.shiftKey && e.key === "ArrowLeft"){ e.preventDefault(); zoomOut(); return; }
+
+  /* --- Verschieben --- */
+  if (e.altKey && !e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")){
+    e.preventDefault();
+    if (moveVertical(f.id, e.key === "ArrowUp" ? -1 : 1)){
+      focusState = { id: f.id, field: f.field, pos: f.pos };
+      render(true);
+    }
+    return;
+  }
+
+  // Beim Umbauen wird der Filter aufgehoben — sonst entstünden unsichtbare Punkte
+  if (filter && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey) ||
+      (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")))){
+    query = "";
+    sucheEl.value = "";
+    toast("Suche zurückgesetzt");
+  }
+
+  /* --- Ein- und Ausrücken --- */
+  if (e.key === "Tab"){
+    e.preventDefault();
+    const ok = e.shiftKey ? outdent(f.id) : indent(f.id);
+    if (ok){ focusState = { id: f.id, field: f.field, pos: f.pos }; render(true); }
+    return;
+  }
+
+  /* --- Notiz --- */
+  if (e.key === "Enter" && e.shiftKey && f.field === "text"){
+    e.preventDefault();
+    if (n.note === null || n.note === undefined){
+      begin("Notiz"); touch(f.id); n.note = ""; commit();
+    }
+    render(false);
+    focusNode(f.id, "note", Infinity);
+    return;
+  }
+
+  /* --- Enter --- */
+  if (e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    if (f.field === "note"){
+      commitField(f);
+      newSiblingAfter(f.id, "");
+      return;
+    }
+    commitField(f);
+    const text = nodes[f.id].text;
+    const before = text.slice(0, f.pos);
+    const after = text.slice(f.pos);
+
+    if (f.pos === 0 && text.length > 0){
+      // leerer Punkt oberhalb, Cursor bleibt stehen
+      begin("Neuer Punkt");
+      const fresh = makeNode("");
+      const p = parentOf(f.id) || nodes[zoomId];
+      touch(p.id);
+      fresh.parentId = p.id;
+      nodes[fresh.id] = fresh;
+      p.children.splice(indexIn(p, f.id), 0, fresh.id);
+      commit();
+      focusState = { id: f.id, field: "text", pos: 0 };
+      render(true);
+      return;
+    }
+
+    begin("Neuer Punkt");
+    touch(f.id);
+    nodes[f.id].text = before;
+    const fresh = makeNode(after);
+    if (n.children.length && !n.collapsed) insertFirstChild(f.id, fresh);
+    else insertAfter(f.id, fresh);
+    commit();
+    focusState = { id: fresh.id, field: "text", pos: 0 };
+    render(true);
+    return;
+  }
+
+  /* --- Rücktaste am Zeilenanfang --- */
+  if (e.key === "Backspace" && f.pos === 0 && window.getSelection().isCollapsed){
+    if (f.field === "note"){
+      if (nodes[f.id].note === ""){
+        e.preventDefault();
+        begin("Notiz entfernen"); touch(f.id); nodes[f.id].note = null; commit();
+        render(false);
+        focusNode(f.id, "text", Infinity);
+      }
+      return;
+    }
+    e.preventDefault();
+    commitField(f);
+    const pos = rowPos(f.id);
+    if (pos <= 0) return;
+    const prevMeta = rowIndex[pos - 1];
+    const prev = nodes[prevMeta.id];
+    if (nodes[f.id].children.length) return;      // Zweige nie stillschweigend verschlucken
+    if (prev.children.length && !prev.collapsed && nodes[f.id].text) return;
+
+    begin(nodes[f.id].text ? "Zeilen verbinden" : "Punkt löschen");
+    const joinAt = prev.text.length;
+    touch(prevMeta.id);
+    prev.text = prev.text + nodes[f.id].text;
+    if (nodes[f.id].note && !prev.note) prev.note = nodes[f.id].note;
+    detach(f.id);
+    removeSubtree(f.id);
+    commit();
+    focusState = { id: prevMeta.id, field: "text", pos: joinAt };
+    render(true);
+    return;
+  }
+
+  /* --- Zeilenweise Navigation --- */
+  if (e.key === "ArrowUp" && !e.altKey && !mod){
+    const pos = rowPos(f.id);
+    if (f.field === "note"){ e.preventDefault(); focusNode(f.id, "text", f.pos); return; }
+    if (pos > 0){
+      e.preventDefault();
+      const target = rowIndex[pos - 1];
+      const prevNode = nodes[target.id];
+      const hasNote = prevNode.note !== null && prevNode.note !== undefined;
+      focusNode(target.id, hasNote ? "note" : "text", Infinity);
+    }
+    return;
+  }
+  if (e.key === "ArrowDown" && !e.altKey && !mod){
+    const pos = rowPos(f.id);
+    const hasNote = n.note !== null && n.note !== undefined;
+    if (f.field === "text" && hasNote){ e.preventDefault(); focusNode(f.id, "note", f.pos); return; }
+    if (pos < rowIndex.length - 1){
+      e.preventDefault();
+      focusNode(rowIndex[pos + 1].id, "text", f.pos);
+    }
+    return;
+  }
+});
+
+function newSiblingAfter(id, text){
+  begin("Neuer Punkt");
+  const fresh = makeNode(text || "");
+  insertAfter(id, fresh);
+  commit();
+  focusState = { id: fresh.id, field: "text", pos: 0 };
+  render(true);
+}
+function newFirstChild(){
+  begin("Neuer Punkt");
+  const fresh = makeNode("");
+  insertFirstChild(zoomId, fresh);
+  commit();
+  focusState = { id: fresh.id, field: "text", pos: 0 };
+  render(true);
+}
+
+/* =========================================================================
+   9 — Eingaben übernehmen
+   ========================================================================= */
+
+function commitField(f){
+  if (!f) return;
+  const n = nodes[f.id];
+  if (!n) return;
+  const val = f.el.textContent;
+  if (f.field === "text" && n.text !== val){ begin("Text"); touch(f.id); n.text = val; n.modified = Date.now(); recordText(f.id); }
+  if (f.field === "note" && n.note !== val){ begin("Notiz"); touch(f.id); n.note = val; n.modified = Date.now(); recordText(f.id); }
+}
+
+rowsEl.addEventListener("input", e => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.field) return;
+  const row = el.closest(".row");
+  if (!row) return;
+  const id = row.dataset.id;
+  const n = nodes[id];
+  if (!n) return;
+  begin(el.dataset.field === "note" ? "Notiz" : "Text");
+  touch(id);
+  if (el.dataset.field === "note") n.note = el.textContent;
+  else n.text = el.textContent;
+  n.modified = Date.now();
+  recordText(id);
+  focusState = { id, field: el.dataset.field, pos: getCaret(el) };
+});
+
+rowsEl.addEventListener("focusin", e => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.field) return;
+  const row = el.closest(".row");
+  if (!row) return;
+  focusState = { id: row.dataset.id, field: el.dataset.field, pos: getCaret(el) };
+  paintFocus();
+});
+rowsEl.addEventListener("focusout", e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.field){
+    const row = el.closest(".row");
+    if (row) commitField({ id: row.dataset.id, field: el.dataset.field, el, pos: 0 });
+    const n = row && nodes[row.dataset.id];
+    if (n && el.dataset.field === "note" && n.note === ""){
+      begin("Notiz entfernen"); touch(row.dataset.id); n.note = null; commit(); render(false);
+    }
+  }
+});
+document.addEventListener("selectionchange", () => {
+  const f = currentField();
+  if (f) focusState = { id: f.id, field: f.field, pos: f.pos };
+});
+
+// Nur die Fokusmarkierung neu zeichnen, ohne das DOM umzubauen
+function paintFocus(){
+  const fm = focusState.id ? rowMeta(focusState.id) : null;
+  const lit = new Set();
+  if (fm){ fm.ancestors.forEach(a => lit.add(a)); lit.add(fm.id); }
+  for (const [id, el] of rowEls){
+    el.classList.toggle("has-focus", id === focusState.id);
+    const meta = rowMeta(id);
+    if (!meta) continue;
+    meta.ancestors.forEach((aid, i) => {
+      const g = el.firstChild.childNodes[i];
+      if (g) g.classList.toggle("lit", lit.has(aid));
+    });
+  }
+}
+
+titleEl.addEventListener("input", () => {
+  const n = nodes[zoomId];
+  begin("Titel"); touch(zoomId);
+  n.text = titleEl.textContent;
+  n.modified = Date.now();
+  recordText(zoomId);
+  titleEl.classList.toggle("empty", !n.text.trim());
+  renderCrumbs();
+});
+
+// Einfügen immer als reiner Text
+document.addEventListener("paste", e => {
+  const f = currentField();
+  if (!f && document.activeElement !== titleEl) return;
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+  document.execCommand("insertText", false, text.replace(/\r/g, ""));
+});
+
+$("#blank-add").addEventListener("click", newFirstChild);
+
+/* =========================================================================
+   10 — Speichern
+   ========================================================================= */
+
+let saveTimer = null;
+let savedAt = null;
+
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 400);
+}
+function save(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, zoomId, nodes }));
+    savedAt = new Date();
+    $("#status").textContent = statusText();
+  } catch (err){
+    $("#status").textContent = "Nicht gesichert — Speicher voll oder gesperrt";
+  }
+}
+function load(){
+  let raw = null;
+  try { raw = localStorage.getItem(STORE_KEY); } catch (err){ raw = null; }
+  if (!raw) return false;
+  try{
+    const data = JSON.parse(raw);
+    if (!data || !data.nodes || !data.nodes[ROOT]) return false;
+    nodes = data.nodes;
+    zoomId = nodes[data.zoomId] ? data.zoomId : ROOT;
+    for (const id in nodes){
+      const n = nodes[id];
+      if (!Array.isArray(n.children)) n.children = [];
+      if (!Array.isArray(n.tags)) n.tags = [];
+      if (n.task === undefined) n.task = null;
+      if (n.fav === undefined) n.fav = false;
+    }
+    savedAt = new Date();
+    return true;
+  } catch (err){ return false; }
+}
+window.addEventListener("beforeunload", () => { clearTimeout(saveTimer); save(); });
+
+/* =========================================================================
+   11 — Datei
+   ========================================================================= */
+
+function download(name, text, mime){
+  const blob = new Blob([text], { type: mime + ";charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function stamp(){
+  const d = new Date();
+  const p = x => String(x).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes());
+}
+function safeName(){
+  const t = nodes[ROOT].text.trim() || "outliner";
+  return t.replace(/[^\wäöüÄÖÜß \-]/g, "").replace(/\s+/g, "-").toLowerCase();
+}
+function exportJSON(){
+  save();
+  download(safeName() + "_" + stamp() + ".json", JSON.stringify({ v: 1, zoomId: ROOT, nodes }, null, 1), "application/json");
+  toast("Sicherung gespeichert");
+}
+function exportMarkdown(){
+  const lines = ["# " + (nodes[ROOT].text.trim() || "Outliner"), ""];
+  const walk = (id, depth) => {
+    for (const cid of nodes[id].children){
+      const n = nodes[cid];
+      const pad = "  ".repeat(depth);
+      lines.push(pad + "- " + n.text);
+      if (n.note) n.note.split("\n").forEach(l => lines.push(pad + "  " + l));
+      walk(cid, depth + 1);
+    }
+  };
+  walk(ROOT, 0);
+  download(safeName() + "_" + stamp() + ".md", lines.join("\n") + "\n", "text/markdown");
+  toast("Markdown gespeichert");
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(String(reader.result));
+      if (!data.nodes || !data.nodes[ROOT]) throw new Error("Format");
+      nodes = data.nodes;
+      zoomId = ROOT;
+      for (const id in nodes){
+        const n = nodes[id];
+        if (!Array.isArray(n.children)) n.children = [];
+        if (!Array.isArray(n.tags)) n.tags = [];
+        if (n.task === undefined) n.task = null;
+      }
+      undoStack.length = 0; redoStack.length = 0;
+      rowEls.forEach(el => el.remove()); rowEls.clear();
+      focusState = { id: null, field: "text", pos: 0 };
+      save(); render(false);
+      toast("Sicherung geöffnet");
+    } catch (err){
+      toast("Datei nicht lesbar — erwartet wird eine Sicherung aus diesem Outliner");
+    }
+  };
+  reader.readAsText(file);
+}
+
+const menuEl = $("#menu-file");
+function closeMenu(){ menuEl.classList.remove("open"); }
+$("#btn-file").addEventListener("click", e => { e.stopPropagation(); menuEl.classList.toggle("open"); });
+document.addEventListener("click", () => closeMenu());
+menuEl.addEventListener("click", e => {
+  const act = e.target.dataset && e.target.dataset.act;
+  if (!act) return;
+  closeMenu();
+  if (act === "json") exportJSON();
+  if (act === "md") exportMarkdown();
+  if (act === "open") $("#file-input").click();
+  if (act === "reset"){
+    if (confirm("Der gesamte Inhalt wird gelöscht. Sicherung vorher speichern?\n\nAbbrechen drücken, wenn du erst sichern willst.")){
+      seed(); undoStack.length = 0; redoStack.length = 0;
+      rowEls.forEach(el => el.remove()); rowEls.clear();
+      save(); render(false);
+    }
+  }
+});
+$("#file-input").addEventListener("change", e => {
+  const file = e.target.files && e.target.files[0];
+  if (file) importJSON(file);
+  e.target.value = "";
+});
+
+function faltenUmschalten(){
+  const anyOpen = nodes[zoomId].children.some(id => nodes[id].children.length && !nodes[id].collapsed);
+  begin(anyOpen ? "Einklappen" : "Ausklappen");
+  const walk = id => {
+    for (const cid of nodes[id].children){
+      if (nodes[cid].children.length){ touch(cid); nodes[cid].collapsed = anyOpen; }
+      walk(cid);
+    }
+  };
+  walk(zoomId);
+  commit();
+  render(false);
+  $("#btn-collapse").textContent = anyOpen ? "Ausklappen" : "Einklappen";
+}
+$("#btn-collapse").addEventListener("click", faltenUmschalten);
+
+/* =========================================================================
+   12 — Kleinkram
+   ========================================================================= */
+
+let toastTimer = null;
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* =========================================================================
+   12b — Suche, Favoriten, Befehlspalette
+   ========================================================================= */
+
+const sucheEl = $("#suche");
+
+function setzeSuche(v, ausRichtungFeld){
+  query = v;
+  if (!ausRichtungFeld) sucheEl.value = v;
+  render(false);
+}
+sucheEl.addEventListener("input", () => setzeSuche(sucheEl.value, true));
+$("#suche-x").addEventListener("click", () => {
+  setzeSuche("");
+  const r = rowIndex[0];
+  if (r) focusNode(r.id, "text", 0);
+});
+
+// Klick auf ein Tag sucht danach
+rowsEl.addEventListener("mousedown", e => {
+  if (e.target.classList && e.target.classList.contains("tag")){
+    e.preventDefault();
+    setzeSuche(e.target.textContent.trim());
+    sucheEl.focus();
+  }
+});
+
+function favUmschalten(id){
+  const n = nodes[id];
+  if (!n) return;
+  begin(n.fav ? "Loslösen" : "Anheften");
+  touch(id);
+  n.fav = !n.fav;
+  commit();
+  render(false);
+  toast(n.fav ? "Angeheftet" : "Nicht mehr angeheftet");
+}
+
+function pfadVon(id){
+  const p = [];
+  let cur = nodes[id] ? nodes[id].parentId : null;
+  while (cur){
+    p.unshift(cur === ROOT ? (nodes[ROOT].text.trim() || "Outliner") : (nodes[cur].text.trim() || "Ohne Titel"));
+    cur = nodes[cur].parentId;
+  }
+  return p.join(" › ");
+}
+
+// Zu einem Punkt springen: Vorfahren aufklappen, Suche zurücksetzen, Cursor setzen
+function springeZu(id){
+  if (!nodes[id]) return;
+  begin("Aufklappen");
+  let cur = nodes[id].parentId;
+  while (cur){
+    if (nodes[cur].collapsed){ touch(cur); nodes[cur].collapsed = false; }
+    cur = nodes[cur].parentId;
+  }
+  commit();
+  query = "";
+  zoomId = ROOT;
+  focusState = { id, field: "text", pos: Infinity };
+  render(true);
+}
+
+const BEFEHLE = [
+  { a: "Ansicht", t: "Ein- und ausklappen", m: "Alle Zweige umschalten", run: faltenUmschalten },
+  { a: "Ansicht", t: "Fokus verlassen", m: "Eine Ebene hinaus", run: zoomOut },
+  { a: "Ansicht", t: "Suche zurücksetzen", m: "Ganze Gliederung zeigen", run: () => setzeSuche("") },
+  { a: "Datei", t: "Sicherung speichern", m: "JSON, verlustfrei", run: exportJSON },
+  { a: "Datei", t: "Als Markdown speichern", m: "Eingerückte Liste", run: exportMarkdown },
+  { a: "Datei", t: "Sicherung öffnen", m: "Ersetzt den Inhalt", run: () => $("#file-input").click() }
+];
+
+const palEl = $("#palette");
+const palEingabe = $("#pal-eingabe");
+const palListe = $("#pal-liste");
+let palOffen = false, palPosten = [], palWahl = 0;
+
+function palOeffnen(vorbelegt){
+  palOffen = true;
+  palEl.hidden = false;
+  palEingabe.value = vorbelegt || "";
+  palBauen();
+  palEingabe.focus();
+  palEingabe.select();
+}
+function palSchliessen(){
+  palOffen = false;
+  palEl.hidden = true;
+  applyFocus();
+}
+
+function palBauen(){
+  const q = palEingabe.value.trim().toLowerCase();
+  palPosten = [];
+  const gruppen = [];
+
+  const befehle = BEFEHLE.filter(b => !q || (b.a + " " + b.t).toLowerCase().includes(q));
+
+  if (!q){
+    const favs = Object.keys(nodes).filter(id => id !== ROOT && nodes[id].fav);
+    if (favs.length) gruppen.push(["Angeheftet", favs.map(id => postenAusNode(id))]);
+    const jung = Object.keys(nodes)
+      .filter(id => id !== ROOT && nodes[id].text.trim())
+      .sort((a, b) => (nodes[b].modified || 0) - (nodes[a].modified || 0))
+      .slice(0, 6);
+    if (jung.length) gruppen.push(["Zuletzt bearbeitet", jung.map(id => postenAusNode(id))]);
+    const tags = alleTags().slice(0, 6);
+    if (tags.length) gruppen.push(["Tags", tags.map(([t, n]) => ({
+      a: "Tag", t: "#" + t, m: n + (n === 1 ? " Punkt" : " Punkte"),
+      run: () => { palSchliessen(); setzeSuche("#" + t); sucheEl.focus(); }
+    }))]);
+  } else {
+    const treffer = Object.keys(nodes)
+      .filter(id => id !== ROOT && (nodes[id].text + " " + (nodes[id].note || "")).toLowerCase().includes(q))
+      .sort((a, b) => (nodes[b].modified || 0) - (nodes[a].modified || 0))
+      .slice(0, 12);
+    if (treffer.length) gruppen.push(["Punkte", treffer.map(id => postenAusNode(id))]);
+    if (treffer.length) gruppen.push(["Suche", [{
+      a: "Filter", t: "„" + palEingabe.value.trim() + "“ in der Gliederung zeigen",
+      m: "Struktur bleibt stehen, alles ohne Treffer verschwindet",
+      run: () => { palSchliessen(); setzeSuche(palEingabe.value.trim()); }
+    }]]);
+  }
+  if (befehle.length) gruppen.push(["Befehle", befehle.map(b => ({
+    a: b.a, t: b.t, m: b.m, run: () => { palSchliessen(); b.run(); }
+  }))]);
+
+  palListe.textContent = "";
+  if (!gruppen.length){
+    const leer = document.createElement("div");
+    leer.className = "pleer";
+    leer.textContent = "Nichts gefunden. Andere Schreibweise versuchen oder mit # nach einem Tag suchen.";
+    palListe.appendChild(leer);
+    return;
+  }
+  for (const [titel, posten] of gruppen){
+    const h = document.createElement("div");
+    h.className = "pgrp";
+    h.textContent = titel;
+    palListe.appendChild(h);
+    for (const p of posten){
+      const i = palPosten.length;
+      palPosten.push(p);
+      const b = document.createElement("button");
+      b.className = "tr";
+      b.dataset.i = i;
+      const a = document.createElement("span"); a.className = "tr-a"; a.textContent = p.a;
+      const mitte = document.createElement("span"); mitte.className = "tr-b";
+      const t = document.createElement("span"); t.className = "tr-t"; t.textContent = p.t;
+      mitte.appendChild(t);
+      if (p.m){ const m = document.createElement("span"); m.className = "tr-m"; m.textContent = p.m; mitte.appendChild(m); }
+      b.append(a, mitte);
+      b.addEventListener("mousedown", e => { e.preventDefault(); palPosten[i].run(); });
+      palListe.appendChild(b);
+    }
+  }
+  palWahl = 0;
+  palMarkieren();
+}
+function postenAusNode(id){
+  const n = nodes[id];
+  return {
+    a: n.fav ? "Angeheftet" : "Punkt",
+    t: n.text.trim() || "Ohne Text",
+    m: pfadVon(id),
+    run: () => { palSchliessen(); springeZu(id); }
+  };
+}
+function palMarkieren(){
+  const knoepfe = palListe.querySelectorAll(".tr");
+  knoepfe.forEach(b => b.classList.toggle("wahl", Number(b.dataset.i) === palWahl));
+  const aktiv = palListe.querySelector(".tr.wahl");
+  if (aktiv && aktiv.scrollIntoView) aktiv.scrollIntoView({ block: "nearest" });
+}
+
+palEingabe.addEventListener("input", palBauen);
+palEingabe.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ e.preventDefault(); palSchliessen(); return; }
+  if (e.key === "ArrowDown"){ e.preventDefault(); palWahl = Math.min(palWahl + 1, palPosten.length - 1); palMarkieren(); return; }
+  if (e.key === "ArrowUp"){ e.preventDefault(); palWahl = Math.max(palWahl - 1, 0); palMarkieren(); return; }
+  if (e.key === "Enter"){
+    e.preventDefault();
+    const p = palPosten[palWahl];
+    if (p) p.run();
+    return;
+  }
+});
+palEl.addEventListener("mousedown", e => { if (e.target === palEl) palSchliessen(); });
+
+/* =========================================================================
+   13 — Start
+   ========================================================================= */
+
+if (!load()) { seed(); save(); }
+render(false);
+const firstRow = rowIndex[0];
+if (firstRow) focusNode(firstRow.id, "text", Infinity);
+</script>
+</body>
+</html>

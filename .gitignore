@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+*.zip
+
+# Sicherungen aus der App
+*_20*.json
+*_20*.md
