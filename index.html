@@ -202,6 +202,23 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* ---------- Stufe 3: Aufgaben ---------- */
+.kasten{flex-shrink:0;width:17px;height:25px;display:none;place-items:center;margin-right:4px}
+.row.aufgabe .kasten{display:grid}
+.kasten b{width:12px;height:12px;border-radius:3px;display:grid;place-items:center;
+  border:1.5px solid var(--rule2);background:var(--sheet);
+  transition:background-color .16s,border-color .16s}
+.kasten:hover b{border-color:var(--tinte)}
+.kasten svg{width:8px;height:8px;opacity:0;color:var(--sheet);transition:opacity .14s}
+.row.erledigt .kasten b{background:var(--gut);border-color:var(--gut)}
+.row.erledigt .kasten svg{opacity:1}
+.row.erledigt .text{color:var(--ink3);text-decoration:line-through;
+  text-decoration-color:var(--rule2)}
+
+.frist{font-family:var(--mono);font-size:11.5px;color:var(--ink3);
+  background:var(--raise);border-radius:4px;padding:0 4px}
+.row.ueberfaellig .frist{color:var(--signal);background:var(--signal-s);font-weight:700}
+
 /* ---------- Geraet im Dunkelmodus: Oberflaeche bleibt hell ---------- */
 @media (prefers-color-scheme:dark){
   :root{color-scheme:only light}
@@ -213,11 +230,15 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   .pbox,.palette-box{background:var(--sheet)!important}
   .tr:hover,.tr.wahl,.feld .k{background:var(--paper)!important}
   .tag{background:var(--tinte-s)!important}
+  .frist{background:var(--raise)!important}
+  .row.ueberfaellig .frist{background:var(--signal-s)!important}
+  .kasten b{background:var(--sheet)!important}
+  .row.erledigt .kasten b{background:var(--gut)!important}
   mark{background:#f6e7a8!important}
   .tool:hover,.statusbar kbd{background:var(--raise)!important}
   .menu button:hover{background:var(--paper)!important}
   .blank button{background:var(--tinte-s)!important}
-  .title,.text,.note,.crumb,.subtitle b,.statusbar,.menu button,.tool{
+  .title,.text,.note,.crumb,.subtitle b,.statusbar,.menu button,.tool,.frist{
     -webkit-text-fill-color:currentColor}
   .title,.text{background:transparent!important}
 }
@@ -316,6 +337,12 @@ function makeNode(text){
   };
 }
 
+/* Aufgabe (Stufe 3). prio, start und progress bleiben vorerst leer —
+   sie gehoeren zum naechsten Schritt und stehen nur schon bereit. */
+function leereAufgabe(){
+  return { status: "offen", prio: null, start: null, due: null, progress: null };
+}
+
 function clone(o){ return o == null ? null : JSON.parse(JSON.stringify(o)); }
 function node(id){ return nodes[id]; }
 function parentOf(id){ const n = nodes[id]; return n && n.parentId ? nodes[n.parentId] : null; }
@@ -353,6 +380,14 @@ function seed(){
   add(b2, "Wörter mit #davor sind Tags. Ein Klick darauf sucht danach.", "Mehrere Wörter grenzen weiter ein, #tag und Text lassen sich mischen.");
   add(b2, "Strg + Umschalt + F heftet einen Punkt an. Angeheftetes steht in der Palette ganz oben.");
   add(b2, "Strg + K öffnet die Palette: springen, suchen, Befehle. Strg + F springt ins Suchfeld.");
+
+  const d = add(ROOT, "Aufgaben #anleitung");
+  const d1 = add(d, "Ein Klick aufs Kästchen hakt eine Aufgabe ab.");
+  nodes[d1].task = leereAufgabe();
+  const d2 = add(d, "Ein Datum mit @ macht einen Punkt von selbst zur Aufgabe: @heute.",
+    "Auch @morgen, @übermorgen und Wochentage wie @fr gehen. Beim Verlassen der Zeile steht das ausgeschriebene Datum da.");
+  fristSpiegeln(nodes[d2]);
+  add(d, "Strg + K führt zu den Sichten Heute und Offen. Sie sind nichts als gespeicherte Suchen.");
 
   const c = add(ROOT, "Womit fängst du an?");
   add(c, "");
@@ -561,18 +596,68 @@ function alleTags(){
   }
   return Array.from(zaehler.entries()).sort((a, b) => b[1] - a[1]);
 }
+/* --- Fälligkeit. Wie ein Tag: das Datum steht im Text und wird von dort
+       nach task.due gespiegelt. Kein Kürzel, kein Formularfeld. --- */
+const FRIST_RE = /@(\d{4}-\d{2}-\d{2}|heute|morgen|übermorgen|uebermorgen|mo|di|mi|do|fr|sa|so)\b/gi;
+const WOCHENTAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
+
+function alsISO(d){
+  const p = x => String(x).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+function heuteISO(){ return alsISO(new Date()); }
+
+function loeseDatum(wort){
+  const w = wort.toLowerCase();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(w)) return w;
+  const d = new Date();
+  if (w === "heute") return alsISO(d);
+  if (w === "morgen"){ d.setDate(d.getDate() + 1); return alsISO(d); }
+  if (w === "übermorgen" || w === "uebermorgen"){ d.setDate(d.getDate() + 2); return alsISO(d); }
+  const ziel = WOCHENTAGE.indexOf(w);
+  if (ziel >= 0){
+    d.setDate(d.getDate() + (ziel - d.getDay() + 7) % 7);   // der nächste, heute zählt mit
+    return alsISO(d);
+  }
+  return null;
+}
+function fristAus(text){
+  FRIST_RE.lastIndex = 0;
+  const m = FRIST_RE.exec(text || "");
+  return m ? loeseDatum(m[1]) : null;
+}
+
+// Einmal festgelegt, von Rendern und Filter gemeinsam gelesen
+function istAufgabe(n){ return !!(n && n.task); }
+function istErledigt(n){ return istAufgabe(n) && n.task.status === "erledigt"; }
+function istOffen(n){ return istAufgabe(n) && !istErledigt(n); }
+function istUeberfaellig(n){ return istOffen(n) && !!n.task.due && n.task.due < heuteISO(); }
+function istFaellig(n){ return istOffen(n) && !!n.task.due && n.task.due <= heuteISO(); }
+
 function parseQuery(q){
   const terms = [], tags = [];
-  let favOnly = false;
+  let favOnly = false, aufgabeOnly = false, offenOnly = false,
+      erledigtOnly = false, faelligOnly = false, ueberfaelligOnly = false;
   q.trim().split(/\s+/).filter(Boolean).forEach(t => {
-    if (t === "!fav" || t === "!angeheftet") favOnly = true;
+    const m = t.toLowerCase();
+    if (m === "!fav" || m === "!angeheftet") favOnly = true;
+    else if (m === "!aufgabe" || m === "!aufgaben") aufgabeOnly = true;
+    else if (m === "!offen") offenOnly = true;
+    else if (m === "!erledigt") erledigtOnly = true;
+    else if (m === "!heute") faelligOnly = true;
+    else if (m === "!überfällig" || m === "!ueberfaellig") ueberfaelligOnly = true;
     else if (t.length > 1 && t[0] === "#") tags.push(t.slice(1).toLowerCase());
     else terms.push(t.toLowerCase());
   });
-  return { terms, tags, favOnly };
+  return { terms, tags, favOnly, aufgabeOnly, offenOnly, erledigtOnly, faelligOnly, ueberfaelligOnly };
 }
 function trifft(n, q){
   if (q.favOnly && !n.fav) return false;
+  if (q.aufgabeOnly && !istAufgabe(n)) return false;
+  if (q.offenOnly && !istOffen(n)) return false;
+  if (q.erledigtOnly && !istErledigt(n)) return false;
+  if (q.faelligOnly && !istFaellig(n)) return false;
+  if (q.ueberfaelligOnly && !istUeberfaellig(n)) return false;
   const heu = (n.text + " " + (n.note || "")).toLowerCase();
   if (!q.terms.every(t => heu.includes(t))) return false;
   if (q.tags.length){
@@ -635,6 +720,7 @@ let focusState = { id: null, field: "text", pos: 0 };
 let titelZeigt = null;   // welcher Punkt gerade als Titel steht
 
 const CARET_SVG = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1 L8 5 L2 9 Z" fill="currentColor"/></svg>';
+const HAKEN_SVG = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3 L4.8 8.6 L9.5 3.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function buildRow(id){
   const el = document.createElement("div");
@@ -660,6 +746,13 @@ function buildRow(id){
   bullet.addEventListener("mousedown", e => e.preventDefault());
   bullet.addEventListener("click", () => zoomTo(id));
 
+  const kasten = document.createElement("button");
+  kasten.className = "kasten";
+  kasten.innerHTML = "<b>" + HAKEN_SVG + "</b>";
+  kasten.tabIndex = -1;
+  kasten.addEventListener("mousedown", e => e.preventDefault());
+  kasten.addEventListener("click", () => erledigtUmschalten(id));
+
   const body = document.createElement("div");
   body.className = "body";
 
@@ -676,7 +769,7 @@ function buildRow(id){
   note.dataset.field = "note";
 
   body.append(text, note);
-  el.append(guides, fold, bullet, body);
+  el.append(guides, fold, bullet, kasten, body);   // guides bleibt firstChild
   return el;
 }
 
@@ -706,13 +799,22 @@ function updateRow(el, meta, litPath){
   el.classList.toggle("fav", !!n.fav);
   el.classList.toggle("treffer", !!(filter && filter.hit.has(meta.id)));
 
+  el.classList.toggle("aufgabe", istAufgabe(n));
+  el.classList.toggle("erledigt", istErledigt(n));
+  el.classList.toggle("ueberfaellig", istUeberfaellig(n));
+  if (istAufgabe(n)){
+    const kasten = el.querySelector(".kasten");
+    kasten.title = istErledigt(n) ? "Wieder öffnen" : "Als erledigt abhaken";
+    kasten.setAttribute("aria-label", kasten.title);
+  }
+
   const text = el.querySelector(".text");
-  male(text, n.text);
+  male(text, n.text, true);
 
   const note = el.querySelector(".note");
   const hasNote = n.note !== null && n.note !== undefined;
   note.classList.toggle("hidden", !hasNote);
-  if (hasNote) male(note, n.note);
+  if (hasNote) male(note, n.note, false);
 }
 
 /* Beim Tippen steht reiner Text im Feld, sonst die ausgezeichnete Fassung.
@@ -720,7 +822,10 @@ function updateRow(el, meta, litPath){
 function escHtml(s){
   return s.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
 }
-function male(el, value){
+/* mitFrist nur fuer die Textzeile: task.due wird allein aus n.text gelesen.
+   Eine Notiz ist Prosa — ein Datum darin soll keine Frist setzen und darum
+   auch nicht so aussehen. */
+function male(el, value, mitFrist){
   if (document.activeElement === el){
     if (el.textContent !== value) el.textContent = value;
     el.dataset.stand = "";
@@ -728,20 +833,33 @@ function male(el, value){
   }
   const stand = value + "\u0000" + query;
   if (el.dataset.stand === stand) return;
-  el.innerHTML = schmuecke(value);
+  el.innerHTML = schmuecke(value, mitFrist);
   el.dataset.stand = stand;
 }
-function schmuecke(text){
+function schmuecke(text, mitFrist){
   const terms = filter ? filter.q.terms.filter(Boolean) : [];
+
+  // Tags und Fristen in einem Durchgang, nach Stelle sortiert
+  const funde = [];
+  const sammle = (re, art) => {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(text))) funde.push({ von: m.index, bis: m.index + m[0].length, art });
+  };
+  sammle(TAG_RE, "tag");
+  if (mitFrist) sammle(FRIST_RE, "frist");
+  funde.sort((a, b) => a.von - b.von);
+
   const teile = [];
-  let last = 0, m;
-  TAG_RE.lastIndex = 0;
-  while ((m = TAG_RE.exec(text))){
-    teile.push({ t: text.slice(last, m.index), tag: false });
-    teile.push({ t: m[0], tag: true });
-    last = m.index + m[0].length;
+  let last = 0;
+  for (const f of funde){
+    if (f.von < last) continue;                      // Überlappung verwerfen
+    teile.push({ t: text.slice(last, f.von), art: null });
+    teile.push({ t: text.slice(f.von, f.bis), art: f.art });
+    last = f.bis;
   }
-  teile.push({ t: text.slice(last), tag: false });
+  teile.push({ t: text.slice(last), art: null });
+
   return teile.map(p => {
     let s = escHtml(p.t);
     for (const term of terms){
@@ -749,7 +867,7 @@ function schmuecke(text){
       s = s.replace(re, "\u0001$1\u0002");
     }
     s = s.replace(/\u0001/g, "<mark>").replace(/\u0002/g, "</mark>");
-    return p.tag ? '<span class="tag">' + s + "</span>" : s;
+    return p.art ? '<span class="' + p.art + '">' + s + "</span>" : s;
   }).join("");
 }
 
@@ -1079,6 +1197,8 @@ document.addEventListener("keydown", e => {
     touch(f.id);
     nodes[f.id].text = before;
     const fresh = makeNode(after);
+    fristSpiegeln(nodes[f.id]);       // die Frist folgt dem Text, auch beim Teilen
+    fristSpiegeln(fresh);
     if (n.children.length && !n.collapsed) insertFirstChild(f.id, fresh);
     else insertAfter(f.id, fresh);
     commit();
@@ -1111,6 +1231,7 @@ document.addEventListener("keydown", e => {
     const joinAt = prev.text.length;
     touch(prevMeta.id);
     prev.text = prev.text + nodes[f.id].text;
+    fristSpiegeln(prev);              // dito beim Verbinden
     if (nodes[f.id].note && !prev.note) prev.note = nodes[f.id].note;
     detach(f.id);
     removeSubtree(f.id);
@@ -1166,12 +1287,46 @@ function newFirstChild(){
    9 — Eingaben übernehmen
    ========================================================================= */
 
+/* Das Datum steht im Text, task.due wird daraus abgeleitet. Verschwindet es,
+   bleibt die Aufgabe bestehen und verliert nur ihre Frist — ein gesetzter
+   Status soll nicht still verschwinden. */
+function fristSpiegeln(n){
+  if (!n) return;
+  const d = fristAus(n.text);
+  if (d){
+    if (!n.task) n.task = leereAufgabe();
+    n.task.due = d;
+  } else if (n.task && n.task.due){
+    n.task.due = null;
+  }
+}
+
+/* @morgen wird beim Verlassen der Zeile zum ausgeschriebenen Datum, sonst
+   zeigt der Text ab dem naechsten Tag etwas anderes an als task.due.
+   Erst hier, nicht beim Tippen — im offenen Feld darf nichts umgeschrieben werden. */
+function fristAusschreiben(n){
+  if (!n || !n.text) return false;
+  const neu = n.text.replace(FRIST_RE, (ganz, wort) => {
+    const d = loeseDatum(wort);
+    return d ? "@" + d : ganz;
+  });
+  if (neu === n.text) return false;
+  begin("Frist");
+  touch(n.id);
+  n.text = neu;
+  fristSpiegeln(n);
+  n.modified = Date.now();
+  commit();
+  lastTextTx = null;
+  return true;
+}
+
 function commitField(f){
   if (!f) return;
   const n = nodes[f.id];
   if (!n) return;
   const val = f.el.textContent;
-  if (f.field === "text" && n.text !== val){ begin("Text"); touch(f.id); n.text = val; n.modified = Date.now(); recordText(f.id); }
+  if (f.field === "text" && n.text !== val){ begin("Text"); touch(f.id); n.text = val; fristSpiegeln(n); n.modified = Date.now(); recordText(f.id); }
   if (f.field === "note" && n.note !== val){ begin("Notiz"); touch(f.id); n.note = val; n.modified = Date.now(); recordText(f.id); }
 }
 
@@ -1186,7 +1341,7 @@ rowsEl.addEventListener("input", e => {
   begin(el.dataset.field === "note" ? "Notiz" : "Text");
   touch(id);
   if (el.dataset.field === "note") n.note = el.textContent;
-  else n.text = el.textContent;
+  else { n.text = el.textContent; fristSpiegeln(n); }
   n.modified = Date.now();
   recordText(id);
   focusState = { id, field: el.dataset.field, pos: getCaret(el) };
@@ -1209,6 +1364,7 @@ rowsEl.addEventListener("focusout", e => {
     if (n && el.dataset.field === "note" && n.note === ""){
       begin("Notiz entfernen"); touch(row.dataset.id); n.note = null; commit(); render(false);
     }
+    if (n && el.dataset.field === "text" && fristAusschreiben(n)) render(false);
   }
 });
 document.addEventListener("selectionchange", () => {
@@ -1273,6 +1429,18 @@ function save(){
     $("#status").textContent = "Nicht gesichert — Speicher voll oder gesperrt";
   }
 }
+/* Aeltere Staende tragen task: null oder gar kein Feld und werden weiter
+   gelesen. Ein vorhandenes task-Objekt wird nur in Form gebracht. */
+function aufgabeNormalisieren(n){
+  const t = n.task;
+  if (!t || typeof t !== "object") return;
+  if (!t.status) t.status = "offen";
+  if (t.prio === undefined) t.prio = null;
+  if (t.start === undefined) t.start = null;
+  if (t.due === undefined) t.due = null;
+  if (t.progress === undefined) t.progress = null;
+}
+
 function load(){
   let raw = null;
   try { raw = localStorage.getItem(STORE_KEY); } catch (err){ raw = null; }
@@ -1288,6 +1456,7 @@ function load(){
       if (!Array.isArray(n.tags)) n.tags = [];
       if (n.task === undefined) n.task = null;
       if (n.fav === undefined) n.fav = false;
+      aufgabeNormalisieren(n);
     }
     savedAt = new Date();
     return true;
@@ -1327,7 +1496,8 @@ function exportMarkdown(){
     for (const cid of nodes[id].children){
       const n = nodes[cid];
       const pad = "  ".repeat(depth);
-      lines.push(pad + "- " + n.text);
+      const marke = n.task ? (n.task.status === "erledigt" ? "[x] " : "[ ] ") : "";
+      lines.push(pad + "- " + marke + n.text);
       if (n.note) n.note.split("\n").forEach(l => lines.push(pad + "  " + l));
       walk(cid, depth + 1);
     }
@@ -1349,6 +1519,7 @@ function importJSON(file){
         if (!Array.isArray(n.children)) n.children = [];
         if (!Array.isArray(n.tags)) n.tags = [];
         if (n.task === undefined) n.task = null;
+        aufgabeNormalisieren(n);
       }
       undoStack.length = 0; redoStack.length = 0;
       rowEls.forEach(el => el.remove()); rowEls.clear();
@@ -1454,6 +1625,30 @@ function favUmschalten(id){
   toast(n.fav ? "Angeheftet" : "Nicht mehr angeheftet");
 }
 
+/* Aufgaben — formgleich zu favUmschalten */
+function aufgabeUmschalten(id){
+  const n = nodes[id];
+  if (!n) return;
+  begin(n.task ? "Aufgabe aufheben" : "Zur Aufgabe machen");
+  touch(id);
+  n.task = n.task ? null : leereAufgabe();
+  n.modified = Date.now();
+  commit();
+  render(false);
+  toast(n.task ? "Ist jetzt eine Aufgabe" : "Ist keine Aufgabe mehr");
+}
+function erledigtUmschalten(id){
+  const n = nodes[id];
+  if (!n) return;
+  begin("Erledigt");
+  touch(id);
+  if (!n.task) n.task = leereAufgabe();
+  n.task.status = istErledigt(n) ? "offen" : "erledigt";
+  n.modified = Date.now();
+  commit();
+  render(false);   // die Zeile selbst ist die Rueckmeldung, kein toast
+}
+
 function pfadVon(id){
   const p = [];
   let cur = nodes[id] ? nodes[id].parentId : null;
@@ -1481,6 +1676,12 @@ function springeZu(id){
 }
 
 const BEFEHLE = [
+  { a: "Aufgabe", t: "Aufgabe umschalten", m: "Punkt zur Aufgabe machen oder zurücknehmen",
+    run: () => focusState.id ? aufgabeUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
+  { a: "Aufgabe", t: "Erledigt umschalten", m: "Abhaken oder wieder öffnen",
+    run: () => focusState.id ? erledigtUmschalten(focusState.id) : toast("Erst einen Punkt anwählen") },
+  { a: "Sicht", t: "Heute", m: "Offenes, das fällig oder überfällig ist", run: () => setzeSuche("!heute") },
+  { a: "Sicht", t: "Offen", m: "Alle offenen Aufgaben", run: () => setzeSuche("!offen") },
   { a: "Ansicht", t: "Ein- und ausklappen", m: "Alle Zweige umschalten", run: faltenUmschalten },
   { a: "Ansicht", t: "Fokus verlassen", m: "Eine Ebene hinaus", run: zoomOut },
   { a: "Ansicht", t: "Suche zurücksetzen", m: "Ganze Gliederung zeigen", run: () => setzeSuche("") },

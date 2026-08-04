@@ -40,8 +40,12 @@ Baum mit unbegrenzter Verschachtelung, Tastaturbedienung, Ein- und Ausklappen, F
 ### Stufe 2 — Organisation *(fertig)*
 Globale Suche als gefilterte Gliederung, Tags per `#`, Anheften, Befehlspalette mit Sprungzielen, zuletzt Bearbeitetem und Befehlen.
 
-### Stufe 3 — Aufgaben
+### Stufe 3 — Aufgaben *(teilweise)*
 Status, Priorität, Start- und Fälligkeitsdatum, Fortschritt als optionale Eigenschaften eines Punktes, per Tastatur inline gesetzt. Sichten „Heute", „Offen", „Wichtig". Überfälliges in Signalrot.
+
+Fertig sind Status und Fälligkeit: abgehakt wird per Klick aufs Kästchen oder über die Befehlspalette, das Datum wird als `@2026-03-09`, `@heute` oder `@fr` in den Text getippt und von dort nach `task.due` gespiegelt — dieselbe Bauart wie die Tags. „Heute" und „Offen" sind gespeicherte Suchen (`!heute`, `!offen`), keine eigene Ansicht.
+
+Offen: Priorität, Startdatum, Fortschritt und die daran hängende Sicht „Wichtig".
 
 ### Stufe 4 — Weitere Ansichten
 Kanban mit frei definierbaren Spalten, Kalender in Tag/Woche/Monat, Gantt mit Zeiträumen und Meilensteinen, Mindmap. Alles als SVG und CSS, ohne Bibliothek.
