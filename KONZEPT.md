@@ -60,10 +60,14 @@ Der **Kalender** zeigt Monat, Woche und Tag. Ein Zeitraum läuft als Balken übe
 
 Eine bewusste Abweichung: **Zuklappen wirkt nicht auf den Kalender.** Fokus und Suche sind absichtliche Einschränkungen, ein zugeklappter Zweig ist nur eine Lesehilfe der Gliederung — er darf keine Termine still entfernen. Technisch über `visibleRows(true)`; dieselbe Funktion ignoriert Zuklappen ohnehin schon, sobald gefiltert wird.
 
-Offen: **Kanban** — erst, wenn `task.status` mehr als `offen` und `erledigt` kennt und es einen Ort für die Spaltendefinition gibt.
+**Kanban ist zurückgestellt und gilt nicht als Zusage** — ob es überhaupt kommt, ist offen. Es bräuchte zwei Eingriffe ins Datenmodell: `task.status` kennt nur `offen` und `erledigt`, und „frei definierbare Spalten" hätten keinen Ort, an dem sie stehen könnten. Nicht anfangen, ohne dass jemand es erneut verlangt.
 
-### Stufe 5 — Wissensnetz
+### Stufe 5 — Wissensnetz *(zurückgestellt)*
 Interne Verweise `[[…]]`, Rückverweise, verwandte Themen. Spiegelungen: ein Punkt erscheint an mehreren Stellen, ohne kopiert zu werden.
+
+**Vorerst nicht umzusetzen, und keine Zusage.** Der Stufenplan bleibt hier als Absichtserklärung stehen, nicht als Auftrag. Nicht anfangen, ohne dass jemand es erneut verlangt.
+
+Zur Einordnung, falls die Frage wiederkommt: Verweise und Rückverweise wären klein — sie säßen auf demselben Muster wie `#tag`, `@datum` und `!hoch`. „Verwandte Themen" bräuchte zuerst eine Festlegung, was verwandt heißen soll. Spiegelungen wären der große Eingriff: sie brechen die Annahme, dass ein Punkt genau ein `parentId` hat, womit die Identität einer Zeile nicht mehr die `id` wäre, sondern `id` plus Pfad — daran hängen `rowIndex`, `rowEls`, `rowMeta`, `rowPos` und `focusState`.
 
 ### Stufe 6 — Dokumente
 Einzelne Bereiche als eigenständige Dokumente behandeln, Import und Export, Archivierung.

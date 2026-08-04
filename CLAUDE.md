@@ -36,7 +36,7 @@ Der `<script>`-Block ist in nummerierte Abschnitte geteilt. Eine Änderung gehö
 | 10 Speichern | `save`, `load`, `scheduleSave` |
 | 11 Datei | JSON- und Markdown-Ausgabe, Import, Menü |
 | 12 / 12b | `toast`, Suche, Favoriten, Befehlspalette |
-| 13 Ansichten | `setzeAnsicht`, `zeichneGantt`, `zeichneMindmap`, `spannenRechner` |
+| 13 Ansichten | `setzeAnsicht`, `zeichneGantt`, `zeichneKalender`, `zeichneMindmap`, `spannenRechner` |
 | 14 Start | Laden oder `seed()`, erstes `render` |
 
 ## Die zwei tragenden Entscheidungen
@@ -98,7 +98,11 @@ Für automatische Prüfungen eignet sich jsdom in einem Wegwerf-Verzeichnis auß
 
 ## Was als Nächstes ansteht
 
-Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut. Es fehlt Kanban. Es braucht vorher zwei Eingriffe ins Modell: `task.status` kennt nur `offen` und `erledigt`, und „frei definierbare Spalten" bräuchten einen Ort, den `save()` heute nicht hat. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
+Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut.
+
+**Zurückgestellt und ausdrücklich keine Zusage: Kanban und die gesamte Stufe 5.** Beides nicht anfangen, ohne dass jemand es erneut verlangt — auch nicht in Teilen und auch nicht, weil KONZEPT.md die Stufen aufzählt. Der Stufenplan dort ist eine Absichtserklärung, kein offener Auftrag.
+
+Damit steht derzeit **nichts** an. Wer hier weiterarbeiten soll, bekommt es gesagt.
 
 Neue Ansichten sind Projektionen: sie lesen `rowIndex`, damit Fokus, Zuklappen und Suche ohne Zutun gelten. Keine Ansicht erfindet eigene Sichtbarkeitsregeln.
 

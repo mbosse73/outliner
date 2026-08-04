@@ -67,7 +67,7 @@ In der Notizzeile gilt nichts davon: sie ist Prosa, ein Datum darin setzt keine 
 
 ## Ansichten
 
-Oben rechts stehen drei Ansichten derselben Punkte; `Strg`+`K` führt ebenfalls hin. Was Sie gerade sehen, hängt nicht davon ab, wo Sie geschrieben haben — Fokus, Zuklappen und Suche gelten überall gleich. Wer nach `!offen` sucht und dann aufs Gantt wechselt, sieht dort genau diese Auswahl.
+Oben rechts stehen vier Ansichten derselben Punkte; `Strg`+`K` führt ebenfalls hin. Was Sie gerade sehen, hängt nicht davon ab, wo Sie geschrieben haben — Fokus und Suche gelten überall gleich. Wer nach `!offen` sucht und dann aufs Gantt wechselt, sieht dort genau diese Auswahl.
 
 - **Gliederung** — schreiben und umbauen. Nur hier wird bearbeitet.
 - **Gantt** — ein Punkt mit Zeitraum wird zum Balken, einer mit bloßer Frist zur Raute. Ein übergeordneter Punkt ohne eigenes Datum fasst zusammen, was darunter liegt: vom frühesten Anfang bis zur spätesten Frist, auch bei zugeklapptem Zweig. Punkte ganz ohne Datum erscheinen nicht.
@@ -93,7 +93,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt, Kalender und Mindmap. Es fehlt Kanban. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt, Kalender und Mindmap. **Kanban und die gesamte Stufe 5 (Wissensnetz) sind zurückgestellt** — ob sie kommen, ist offen. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
