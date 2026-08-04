@@ -67,10 +67,9 @@ Interne Verweise `[[…]]`, Rückverweise, verwandte Themen. Spiegelungen: ein P
 
 Fertig sind **Verweise und Rückverweise**. Ein Verweis zielt über den blanken Text des Punktes — also ohne Tags, Fristen, Priorität und Fortschritt —, damit er von Hand schreibbar bleibt. Der Preis ist, dass er beim Umbenennen des Ziels ins Leere geht; deshalb wird ein loser Verweis sichtbar gezeichnet statt still wirkungslos zu sein. Nichts davon wird gespeichert: beide Verzeichnisse entstehen je Rendern aus den Texten, wie schon die Tags.
 
-Offen:
+**Spiegelungen sind zurückgestellt** — ob sie überhaupt kommen, ist offen. Sie brechen die Annahme, dass ein Punkt genau ein `parentId` hat: die Identität einer Zeile wäre dann nicht mehr die `id`, sondern `id` plus Pfad. Daran hängen `rowIndex`, `rowEls`, `rowMeta`, `rowPos` und `focusState`. Es gilt nicht als Zusage.
 
-- **Verwandte Themen** — hier fehlt zuerst eine Festlegung, was „verwandt" heißen soll: gemeinsame Tags, gemeinsame Verweisziele oder Textähnlichkeit. Ohne diese Entscheidung ist nichts zu bauen.
-- **Spiegelungen** — der große Eingriff. Sie brechen die Annahme, dass ein Punkt genau ein `parentId` hat: die Identität einer Zeile wäre dann nicht mehr die `id`, sondern `id` plus Pfad. Daran hängen `rowIndex`, `rowEls`, `rowMeta`, `rowPos` und `focusState`. Gehört in einen eigenen Schritt, nicht nebenbei.
+Offen bleibt **verwandte Themen** — hier fehlt zuerst eine Festlegung, was „verwandt" heißen soll: gemeinsame Tags, gemeinsame Verweisziele oder Textähnlichkeit. Ohne diese Entscheidung ist nichts zu bauen.
 
 ### Stufe 6 — Dokumente
 Einzelne Bereiche als eigenständige Dokumente behandeln, Import und Export, Archivierung.

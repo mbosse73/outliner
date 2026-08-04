@@ -98,7 +98,7 @@ Für automatische Prüfungen eignet sich jsdom in einem Wegwerf-Verzeichnis auß
 
 ## Was als Nächstes ansteht
 
-Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut, von Stufe 5 die Verweise samt Rückverweisen. **Kanban ist zurückgestellt und gilt nicht als Zusage.** Offen sind „verwandte Themen" — dafür fehlt zuerst eine Festlegung, was verwandt heißen soll — und Spiegelungen, die die Annahme brechen, dass ein Punkt genau ein `parentId` hat. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
+Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut, von Stufe 5 die Verweise samt Rückverweisen. **Zurückgestellt und ausdrücklich keine Zusage: Kanban und Spiegelungen.** Beide nicht anfangen, ohne dass jemand sie erneut verlangt. Offen bleibt allein „verwandte Themen" — dafür fehlt zuerst eine Festlegung, was verwandt heißen soll; ohne die ist nichts zu bauen. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
 
 Der Zwischenspeicher in `male()` (`dataset.stand`) muss alles enthalten, wovon die Auszeichnung abhängt. Bei Verweisen gehört dazu, ob sie aufgehen — das hängt am Text **anderer** Punkte. Wer dort etwas ergänzt, das von außerhalb der Zeile abhängt, muss den Schlüssel erweitern, sonst bleibt eine veraltete Zeile stehen.
 

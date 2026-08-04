@@ -101,7 +101,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3, von Stufe 4 die Ansichten Gantt, Kalender und Mindmap, und von Stufe 5 die Verweise samt Rückverweisen. Kanban ist zurückgestellt; verwandte Themen und Spiegelungen stehen aus. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3, von Stufe 4 die Ansichten Gantt, Kalender und Mindmap, und von Stufe 5 die Verweise samt Rückverweisen. Kanban und Spiegelungen sind zurückgestellt; offen ist noch, was „verwandte Themen" heißen soll. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
