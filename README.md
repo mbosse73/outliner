@@ -52,7 +52,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 und 2. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md).
+Umgesetzt sind Stufe 1 und 2. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 
