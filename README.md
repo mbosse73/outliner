@@ -71,7 +71,12 @@ Oben rechts stehen drei Ansichten derselben Punkte; `Strg`+`K` führt ebenfalls 
 
 - **Gliederung** — schreiben und umbauen. Nur hier wird bearbeitet.
 - **Gantt** — ein Punkt mit Zeitraum wird zum Balken, einer mit bloßer Frist zur Raute. Ein übergeordneter Punkt ohne eigenes Datum fasst zusammen, was darunter liegt: vom frühesten Anfang bis zur spätesten Frist, auch bei zugeklapptem Zweig. Punkte ganz ohne Datum erscheinen nicht.
+- **Kalender** — in Monat, Woche und Tag. Ein Zeitraum läuft als Balken über die Tage und bricht am Sonntag um; überschneidet sich etwas, rückt es in die nächste Spur. Anders als im Gantt erscheint hier nur, was **selbst** ein Datum trägt — ein Monatsfeld hat wenig Platz, und eine Zusammenfassung nennt keinen Termin, den man wahrnehmen könnte.
 - **Mindmap** — derselbe Zweig radial angeordnet. Ein Klick springt in einen Punkt und wechselt zurück zur Gliederung.
+
+Der Kalender kennt **keine Uhrzeiten** — das Modell speichert Tage, keine Zeitpunkte. Die Tagesansicht zählt deshalb auf, was an einem Tag läuft, beginnt, endet oder fällig wird, statt nach der Uhr zu ordnen.
+
+Eine Abweichung ist Absicht: **Zuklappen wirkt nicht auf den Kalender.** Fokus und Suche schon — das sind bewusste Einschränkungen. Ein zugeklappter Zweig ist dagegen nur eine Lesebequemlichkeit der Gliederung und soll keine Termine still verschwinden lassen.
 
 Auf schmalen Fenstern weicht die Leiste, damit sie den Pfad nicht zerdrückt; die Palette führt weiterhin zu jeder Ansicht.
 
@@ -88,7 +93,7 @@ Zwei Ausgabeformate:
 
 ## Stand
 
-Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt und Mindmap. Es fehlen Kalender und Kanban. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
+Umgesetzt sind Stufe 1 bis 3 sowie von Stufe 4 die Ansichten Gantt, Kalender und Mindmap. Es fehlt Kanban. Der weitere Plan steht in [KONZEPT.md](KONZEPT.md), die Arbeitsregeln für Änderungen in [CLAUDE.md](CLAUDE.md).
 
 ## Aufbau
 

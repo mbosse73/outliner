@@ -4,7 +4,7 @@ Arbeitsanweisung für Claude Code in diesem Repository.
 
 ## Was das hier ist
 
-Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 2300 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
+Ein Outliner als **einzelne HTML-Datei** (`index.html`, rund 2600 Zeilen). Notizen, Aufgaben, Projekte und Wissen liegen in einer Baumstruktur; aus derselben Struktur sollen später weitere Ansichten entstehen. Konzept, Architektur und Stufenplan stehen in [KONZEPT.md](KONZEPT.md) — bitte vor größeren Änderungen lesen.
 
 ## Harte Regeln
 
@@ -98,9 +98,11 @@ Für automatische Prüfungen eignet sich jsdom in einem Wegwerf-Verzeichnis auß
 
 ## Was als Nächstes ansteht
 
-Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt und Mindmap gebaut. Es fehlen Kalender und Kanban. Kanban braucht vorher zwei Eingriffe ins Modell: `task.status` kennt nur `offen` und `erledigt`, und „frei definierbare Spalten" bräuchten einen Ort, den `save()` heute nicht hat. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
+Stufe 1 bis 3 sind fertig, von Stufe 4 sind Gantt, Kalender und Mindmap gebaut. Es fehlt Kanban. Es braucht vorher zwei Eingriffe ins Modell: `task.status` kennt nur `offen` und `erledigt`, und „frei definierbare Spalten" bräuchten einen Ort, den `save()` heute nicht hat. Reihenfolge und Umfang stehen in KONZEPT.md und sollen nicht vorgezogen werden.
 
-Neue Ansichten sind Projektionen: sie lesen `rowIndex`, damit Fokus, Zuklappen und Suche ohne Zutun gelten. Keine Ansicht bekommt eigene Sichtbarkeitsregeln.
+Neue Ansichten sind Projektionen: sie lesen `rowIndex`, damit Fokus, Zuklappen und Suche ohne Zutun gelten. Keine Ansicht erfindet eigene Sichtbarkeitsregeln.
+
+Eine einzige Abweichung ist bewusst und muss so bleiben: Der **Kalender** nimmt `visibleRows(true)` statt `rowIndex` und übergeht damit das Zuklappen. Fokus und Suche sind absichtliche Einschränkungen, ein zugeklappter Zweig ist nur eine Lesehilfe der Gliederung — er darf keine Termine still entfernen. Dieselbe Funktion ignoriert Zuklappen ohnehin schon, sobald gefiltert wird. Wer das für ein Versehen hält und „aufräumt", baut den Fehler wieder ein.
 
 ## Umgang mit Aufgaben
 

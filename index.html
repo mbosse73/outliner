@@ -277,6 +277,64 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
 .graute.ueberfaellig{background:var(--signal)}
 .gleer{padding:26px 4px;font-size:13px;color:var(--ink3);line-height:1.6;max-width:52ch}
 
+/* Kalender */
+.kalender{padding:4px 0 30px}
+.kkopf{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:2px 0 12px}
+.kzeitraum{flex:1;min-width:140px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--ink3)}
+.knav{display:flex;gap:2px;flex-shrink:0}
+.knopf{font-size:12.5px;color:var(--ink2);border:1px solid var(--rule2);
+  border-radius:8px;padding:4px 11px;background:var(--paper)}
+.knopf:hover{background:var(--raise);color:var(--ink)}
+.kmodi{display:flex;gap:2px;padding:2px;border-radius:9px;
+  background:var(--paper);border:1px solid var(--rule);flex-shrink:0}
+.kmodus{font-size:12px;color:var(--ink3);padding:3px 10px;border-radius:7px}
+.kmodus:hover{color:var(--ink)}
+.kmodus.an{background:var(--tinte-s);color:var(--tinte);font-weight:600}
+
+.kwtage{display:grid;grid-template-columns:repeat(7,1fr);
+  border-bottom:1px solid var(--rule);padding-bottom:6px}
+.kwtage b{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;font-weight:700;color:var(--ink3);padding-left:5px}
+.kraster{border-left:1px solid var(--rule)}
+.kwoche{border-bottom:1px solid var(--rule);padding-bottom:5px}
+.ktage{display:grid;grid-template-columns:repeat(7,1fr)}
+.ktag{font-family:var(--mono);font-size:11px;color:var(--ink2);
+  padding:5px 0 3px 5px;border-right:1px solid var(--rule)}
+.ktag.fremd{color:var(--rule2)}
+.ktag.heute{color:var(--tinte);font-weight:700;background:var(--tinte-s)}
+/* Tagesgrenzen bis unter die Balken, sonst ist nicht ablesbar, an welchem
+   Tag einer endet. Eine Haarlinie je Spalte, wie in der Zahlenzeile. */
+.kbalken{position:relative;min-height:21px;
+  background:repeating-linear-gradient(to right,
+    var(--rule) 0 1px, transparent 1px calc(100% / 7))}
+.kwoche.gross .kbalken{min-height:46vh}
+.kein{position:absolute;height:18px;font-size:11.5px;line-height:18px;
+  border-radius:4px;padding:0 6px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;background:var(--raise);color:var(--ink2);
+  border-left:2px solid var(--rule2)}
+.kein:hover{background:var(--sheet);color:var(--tinte);border-left-color:var(--tinte)}
+.kein.erledigt{color:var(--ink3);text-decoration:line-through;
+  text-decoration-color:var(--rule2);border-left-color:var(--gut)}
+.kein.ueberfaellig{background:var(--signal-s);color:var(--signal);
+  border-left-color:var(--signal);font-weight:600}
+.kein.offen-l{border-left:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.kein.offen-r{border-top-right-radius:0;border-bottom-right-radius:0}
+.kmehr{position:absolute;font-family:var(--mono);font-size:10px;
+  color:var(--ink3);padding-left:6px;line-height:18px}
+
+.ktagliste{padding:4px 0}
+.kzeile{display:flex;align-items:center;gap:12px;padding:5px 2px;
+  border-bottom:1px solid var(--rule)}
+.kwann{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3);flex-shrink:0;min-width:66px}
+.ktext{flex:1;min-width:0;font-size:13.5px;color:var(--ink2);text-align:left;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ktext:hover{color:var(--tinte)}
+.ktext.erledigt{color:var(--ink3);text-decoration:line-through;
+  text-decoration-color:var(--rule2)}
+.ktext.ueberfaellig{color:var(--signal);font-weight:600}
+
 /* Mindmap — SVG zieht nur die Linien, die Beschriftungen liegen als HTML darueber.
    Die Karte bekommt ihre Groesse aus der Blattzahl; passt sie nicht, rollt sie
    in ihrer eigenen Flaeche, statt die Seite breit zu machen. */
@@ -302,7 +360,7 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
 
 /* Die Kopfzeile ist eng. Wird es zu schmal, weicht die Umschaltleiste, bevor
    sie den Pfad zerdrueckt — Strg+K fuehrt weiterhin zu jeder Ansicht. */
-@media(max-width:860px){ .ansichten{display:none} }
+@media(max-width:930px){ .ansichten{display:none} }
 
 @media(max-width:640px){
   .gantt{--gnamen:42%}
@@ -328,6 +386,13 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   .gbalken.ueberfaellig{background:var(--signal-s)!important}
   .gbalken.summe{background:var(--ink3)!important}
   .mast{background:var(--sheet)!important}
+  .knopf,.kmodi{background:var(--paper)!important}
+  .knopf:hover{background:var(--raise)!important}
+  .kmodus.an{background:var(--tinte-s)!important}
+  .ktag.heute{background:var(--tinte-s)!important}
+  .kein{background:var(--raise)!important}
+  .kein:hover{background:var(--sheet)!important}
+  .kein.ueberfaellig{background:var(--signal-s)!important}
   .row.ueberfaellig .frist{background:var(--signal-s)!important}
   .fortschritt-voll{background:var(--gut-s)!important}
   .kasten b{background:var(--sheet)!important}
@@ -358,6 +423,7 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
   <div class="ansichten" role="group" aria-label="Ansicht">
     <button class="sicht" data-sicht="gliederung">Gliederung</button>
     <button class="sicht" data-sicht="gantt">Gantt</button>
+    <button class="sicht" data-sicht="kalender">Kalender</button>
     <button class="sicht" data-sicht="mindmap">Mindmap</button>
   </div>
   <div class="tools">
@@ -382,6 +448,7 @@ mark{background:#f6e7a8;color:var(--ink);border-radius:3px;padding:0 1px}
     <div id="rows"></div>
     <div class="blank" id="blank" hidden>Noch nichts hier. <button id="blank-add">Ersten Punkt schreiben</button></div>
     <div class="gantt" id="gantt" hidden></div>
+    <div class="kalender" id="kalender" hidden></div>
     <div class="mindmap" id="mindmap" hidden></div>
   </div>
 </div>
@@ -427,8 +494,11 @@ let nodes = Object.create(null);
 let zoomId = ROOT;
 let query = "";      // aktuelle Suche
 let filter = null;   // {hit, keep, q} solange gesucht wird
-const ANSICHTEN = ["gliederung", "gantt", "mindmap"];
+const ANSICHTEN = ["gliederung", "gantt", "mindmap", "kalender"];
+const KALENDERMODI = ["monat", "woche", "tag"];
 let ansicht = "gliederung";
+let kalenderModus = "monat";
+let kalenderTag = null;   // Anker; beim Start immer heute, nie gespeichert
 
 function uid(){
   return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -833,7 +903,11 @@ function baueFilter(){
   return { hit, keep, q };
 }
 
-function visibleRows(){
+/* ohneFalten: Zuklappen wird uebergangen. Fokus und Suche gelten weiter —
+   das sind bewusste Einschraenkungen, Zuklappen ist dagegen eine
+   Lesebequemlichkeit der Gliederung. Der Kalender nutzt das, damit ein
+   zugeklapptes Projekt seine Termine nicht still mitnimmt. */
+function visibleRows(ohneFalten){
   const out = [];
   const walk = (id, depth, ancestors) => {
     const n = nodes[id];
@@ -847,7 +921,8 @@ function visibleRows(){
         walk(cid, depth + 1, ancestors.concat(cid));  // beim Filtern zählt kein Zuklappen
       } else {
         out.push({ id: cid, depth, ancestors });
-        if (!c.collapsed && c.children.length) walk(cid, depth + 1, ancestors.concat(cid));
+        if ((ohneFalten || !c.collapsed) && c.children.length)
+          walk(cid, depth + 1, ancestors.concat(cid));
       }
     }
   };
@@ -1597,7 +1672,7 @@ function scheduleSave(){
 }
 function save(){
   try{
-    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, zoomId, ansicht, nodes }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, zoomId, ansicht, kalenderModus, nodes }));
     savedAt = new Date();
     $("#status").textContent = statusText();
   } catch (err){
@@ -1627,6 +1702,7 @@ function load(){
     zoomId = nodes[data.zoomId] ? data.zoomId : ROOT;
     // Aeltere Staende kennen das Feld nicht und landen auf der Gliederung
     ansicht = ANSICHTEN.indexOf(data.ansicht) >= 0 ? data.ansicht : "gliederung";
+    kalenderModus = KALENDERMODI.indexOf(data.kalenderModus) >= 0 ? data.kalenderModus : "monat";
     for (const id in nodes){
       const n = nodes[id];
       if (!Array.isArray(n.children)) n.children = [];
@@ -2029,12 +2105,14 @@ palEl.addEventListener("mousedown", e => { if (e.target === palEl) palSchliessen
    ========================================================================= */
 
 const ganttEl = $("#gantt");
+const kalenderEl = $("#kalender");
 const mindmapEl = $("#mindmap");
 const docEl = document.querySelector(".doc");
 
 function ansichtZeigen(){
   rowsEl.hidden = ansicht !== "gliederung";
   ganttEl.hidden = ansicht !== "gantt";
+  kalenderEl.hidden = ansicht !== "kalender";
   mindmapEl.hidden = ansicht !== "mindmap";
   docEl.classList.toggle("weit", ansicht !== "gliederung");
   document.querySelectorAll(".sicht").forEach(b =>
@@ -2049,6 +2127,7 @@ function setzeAnsicht(a){
 }
 function zeichneAnsicht(){
   if (ansicht === "gantt") zeichneGantt();
+  else if (ansicht === "kalender") zeichneKalender();
   else if (ansicht === "mindmap") zeichneMindmap();
 }
 document.querySelectorAll(".sicht").forEach(b =>
@@ -2214,6 +2293,227 @@ function zeichneGantt(){
     koerper.appendChild(zeile);
   }
   ganttEl.appendChild(koerper);
+}
+
+/* --- Kalender ---------------------------------------------------------
+   Anders als im Gantt gibt es hier keine Zusammenfassung: ein Monatsfeld
+   hat wenig Platz, und ein Elternbalken nennt keinen Termin, den man
+   wahrnehmen koennte. Es erscheint nur, was selbst ein Datum traegt. */
+
+const WOCHENTAG_FMT = new Intl.DateTimeFormat("de-DE", { weekday: "short" });
+const TAG_FMT = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+function kalenderAnker(){ return kalenderTag || heuteISO(); }
+
+/* Bewusst visibleRows(true) statt rowIndex: ein Termin soll nicht
+   verschwinden, weil sein Zweig in der Gliederung zugeklappt ist. Fokus
+   und Suche gelten hier trotzdem. */
+function kalenderEintraege(){
+  return visibleRows(true).map(r => {
+    const n = nodes[r.id];
+    if (!n.task || (!n.task.due && !n.task.start)) return null;
+    const a = n.task.start || n.task.due;
+    const b = n.task.due || n.task.start;
+    return { id: r.id, n, von: a <= b ? a : b, bis: a <= b ? b : a };
+  }).filter(Boolean);
+}
+function eintragKlasse(n){
+  return istUeberfaellig(n) ? "ueberfaellig" : istErledigt(n) ? "erledigt" : "";
+}
+function kalenderText(n){
+  return n.text.replace(FRIST_RE, "").replace(PROZENT_RE, "")
+               .replace(/\s{2,}/g, " ").trim() || n.text.trim() || "Ohne Text";
+}
+function eintragKnopf(e, klasse){
+  const b = document.createElement("button");
+  b.className = klasse + " " + eintragKlasse(e.n);
+  b.textContent = kalenderText(e.n);
+  b.title = e.von === e.bis ? e.von : e.von + " bis " + e.bis;
+  b.addEventListener("click", () => { setzeAnsicht("gliederung"); springeZu(e.id); });
+  return b;
+}
+
+/* Eine Wochenzeile. Monat ruft das je Woche, die Wochenansicht einmal mit
+   mehr Spuren — es ist dieselbe Zeichnung, nur unterschiedlich hoch. */
+function zeichneWochenzeile(vonISO, maxSpuren, alleEintraege, monat){
+  const bisISO = plusTage(vonISO, 6);
+  const heute = heuteISO();
+
+  const zeile = document.createElement("div");
+  zeile.className = "kwoche";
+
+  const koepfe = document.createElement("div");
+  koepfe.className = "ktage";
+  for (let i = 0; i < 7; i++){
+    const t = plusTage(vonISO, i);
+    const z = document.createElement("div");
+    z.className = "ktag" + (t === heute ? " heute" : "") +
+                  (monat && t.slice(0, 7) !== monat ? " fremd" : "");
+    z.textContent = String(tagAus(t).getDate());
+    koepfe.appendChild(z);
+  }
+  zeile.appendChild(koepfe);
+
+  // Spuren verteilen: sonst lägen mehrtägige Balken übereinander
+  const dieser = alleEintraege
+    .filter(e => e.von <= bisISO && e.bis >= vonISO)
+    .map(e => ({ e,
+      a: Math.max(0, tageZwischen(vonISO, e.von)),
+      b: Math.min(6, tageZwischen(vonISO, e.bis)),
+      offenLinks: e.von < vonISO, offenRechts: e.bis > bisISO }))
+    .sort((x, y) => x.a - y.a || (y.b - y.a) - (x.b - x.a));
+
+  const spuren = [];
+  for (const s of dieser){
+    let i = 0;
+    while (spuren[i] && spuren[i].some(o => !(s.b < o.a || s.a > o.b))) i++;
+    (spuren[i] = spuren[i] || []).push(s);
+    s.spur = i;
+  }
+
+  const flaeche = document.createElement("div");
+  flaeche.className = "kbalken";
+  const rest = new Array(7).fill(0);
+  for (const s of dieser){
+    if (s.spur >= maxSpuren){
+      for (let i = s.a; i <= s.b; i++) rest[i]++;
+      continue;
+    }
+    const b = eintragKnopf(s.e, "kein");
+    b.style.left = (s.a / 7) * 100 + "%";
+    b.style.width = ((s.b - s.a + 1) / 7) * 100 + "%";
+    b.style.top = s.spur * 21 + "px";
+    if (s.offenLinks) b.classList.add("offen-l");
+    if (s.offenRechts) b.classList.add("offen-r");
+    flaeche.appendChild(b);
+  }
+  const genutzt = Math.min(maxSpuren, spuren.length);
+  for (let i = 0; i < 7; i++){
+    if (!rest[i]) continue;
+    const w = document.createElement("span");
+    w.className = "kmehr";
+    w.style.left = (i / 7) * 100 + "%";
+    w.style.top = genutzt * 21 + "px";
+    w.textContent = "+" + rest[i];
+    flaeche.appendChild(w);
+  }
+  flaeche.style.height = (genutzt + (rest.some(Boolean) ? 1 : 0)) * 21 + 4 + "px";
+  zeile.appendChild(flaeche);
+  return zeile;
+}
+
+function zeichneKalender(){
+  kalenderEl.textContent = "";
+  const anker = kalenderAnker();
+  const eintraege = kalenderEintraege();
+
+  // Kopfzeile: hier, nicht oben in der Leiste — dort ist kein Platz
+  const kopf = document.createElement("div");
+  kopf.className = "kkopf";
+  const titel = document.createElement("b");
+  titel.className = "kzeitraum";
+  titel.textContent = kalenderModus === "monat" ? MONAT_FMT.format(tagAus(anker))
+    : kalenderModus === "woche"
+      ? "Woche ab " + tagAus(aufMontag(anker)).toLocaleDateString("de-DE", { day:"numeric", month:"long", year:"numeric" })
+      : TAG_FMT.format(tagAus(anker));
+  kopf.appendChild(titel);
+
+  const nav = document.createElement("div");
+  nav.className = "knav";
+  const schritt = r => {
+    if (kalenderModus === "monat"){
+      const d = tagAus(anker); d.setDate(1); d.setMonth(d.getMonth() + r);
+      kalenderTag = alsISO(d);
+    } else kalenderTag = plusTage(anker, r * (kalenderModus === "woche" ? 7 : 1));
+    render(false);
+  };
+  const knopf = (t, titel, fn) => {
+    const b = document.createElement("button");
+    b.className = "knopf"; b.textContent = t; b.title = titel;
+    b.addEventListener("click", fn);
+    return b;
+  };
+  nav.appendChild(knopf("‹", "Zurück", () => schritt(-1)));
+  nav.appendChild(knopf("Heute", "Zum heutigen Tag", () => { kalenderTag = heuteISO(); render(false); }));
+  nav.appendChild(knopf("›", "Weiter", () => schritt(1)));
+  kopf.appendChild(nav);
+
+  const modi = document.createElement("div");
+  modi.className = "kmodi";
+  for (const m of KALENDERMODI){
+    const b = document.createElement("button");
+    b.className = "kmodus" + (m === kalenderModus ? " an" : "");
+    b.textContent = m[0].toUpperCase() + m.slice(1);
+    b.addEventListener("click", () => {
+      kalenderModus = m; scheduleSave(); render(false);
+    });
+    modi.appendChild(b);
+  }
+  kopf.appendChild(modi);
+  kalenderEl.appendChild(kopf);
+
+  if (kalenderModus === "tag"){ zeichneKalenderTag(anker, eintraege); return; }
+
+  // Wochentagsnamen
+  const namen = document.createElement("div");
+  namen.className = "kwtage";
+  const montag = aufMontag(anker);
+  for (let i = 0; i < 7; i++){
+    const s = document.createElement("b");
+    s.textContent = WOCHENTAG_FMT.format(tagAus(plusTage(montag, i)));
+    namen.appendChild(s);
+  }
+  kalenderEl.appendChild(namen);
+
+  const raster = document.createElement("div");
+  raster.className = "kraster";
+  if (kalenderModus === "woche"){
+    const z = zeichneWochenzeile(montag, 10, eintraege, null);
+    z.classList.add("gross");     // die Woche ist die ganze Ansicht, nicht eine Zeile
+    raster.appendChild(z);
+  } else {
+    const monat = anker.slice(0, 7);
+    let w = aufMontag(monat + "-01");
+    const letzter = plusTage(tagAus(monat + "-01").getMonth() === 11
+      ? (Number(monat.slice(0, 4)) + 1) + "-01-01" : monat.slice(0, 5) +
+        String(tagAus(monat + "-01").getMonth() + 2).padStart(2, "0") + "-01", -1);
+    while (w <= letzter){
+      raster.appendChild(zeichneWochenzeile(w, 4, eintraege, monat));
+      w = plusTage(w, 7);
+    }
+  }
+  kalenderEl.appendChild(raster);
+}
+
+function zeichneKalenderTag(anker, eintraege){
+  const liste = document.createElement("div");
+  liste.className = "ktagliste";
+  const dran = eintraege.filter(e => e.von <= anker && e.bis >= anker)
+    .sort((a, b) => a.von.localeCompare(b.von) || kalenderText(a.n).localeCompare(kalenderText(b.n)));
+  if (!dran.length){
+    const leer = document.createElement("div");
+    leer.className = "gleer";
+    leer.textContent = "An diesem Tag steht nichts an.";
+    liste.appendChild(leer);
+  }
+  for (const e of dran){
+    const z = document.createElement("div");
+    z.className = "kzeile";
+    const wann = document.createElement("span");
+    wann.className = "kwann";
+    wann.textContent = e.von === e.bis ? "fällig"
+      : (e.bis === anker ? "endet" : e.von === anker ? "beginnt" : "läuft");
+    z.appendChild(wann);
+    z.appendChild(eintragKnopf(e, "ktext"));
+    if (e.n.task.progress !== null && e.n.task.progress !== undefined){
+      const p = document.createElement("span");
+      p.className = "fortschritt";
+      p.textContent = e.n.task.progress + "%";
+      z.appendChild(p);
+    }
+    liste.appendChild(z);
+  }
+  kalenderEl.appendChild(liste);
 }
 
 /* Mindmap: das SVG zieht nur die Verbindungen, die Beschriftungen liegen als
